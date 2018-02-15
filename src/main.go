@@ -3,11 +3,10 @@ package main
 import (
 	"gopkg.in/olivere/elastic.v5"
 	"context"
-	"ppio-web/src/models"
-	"ppio-web/src/config"
-	"ppio-web/src/utils"
-	"strconv"
+	"ppio/src/config"
+	"ppio/src/utils"
 )
+
 
 func createIndex(indexName string, client *elastic.Client,
 	ctx context.Context) {
@@ -21,12 +20,21 @@ func createIndex(indexName string, client *elastic.Client,
 		}
 	}
 
-	_, err = client.CreateIndex(indexName).
-		BodyString(config.PlayerMapping).Do(ctx)
+	if indexName == "players" {
+		_, err = client.CreateIndex(indexName).
+			BodyString(config.PlayerMapping).Do(ctx)
+	} else if indexName == "games" {
+		_, err = client.CreateIndex(indexName).
+			BodyString(config.GameMapping).Do(ctx)
+	}
+
 	if err != nil {
 		panic(err)
 	}
 }
+
+
+
 
 func main() {
 
@@ -38,21 +46,18 @@ func main() {
 	}
 	defer client.Stop()
 
-	createIndex("players", client, ctx)
-	createIndex("games", client, ctx)
 
-	var players []models.Player
-	players = utils.GetPlayers()
+	players := utils.GetPlayers()
 
-	for index, player := range players {
-		_, err = client.Index().
-			Index("players").
-			Type("doc").
-			Id(strconv.Itoa(index)).
-			BodyJson(player).
-			Do(ctx)
-		if err != nil {
-			panic(err)
-		}
+	for i, player := range players {
+		player.Insert(client, ctx, i)
 	}
+
+	games := utils.GenerateGames(players)
+
+	for j, game := range games {
+
+		game.Insert(client, ctx, j)
+	}
+
 }
