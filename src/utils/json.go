@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"os"
 	"io/ioutil"
-	"ppio/src/models"
 	"math/rand"
+	"ppio/models"
 )
 
 func GetPlayers() []models.Player {
-	raw, err := ioutil.ReadFile("data/dummy-players.json")
+	raw, err := ioutil.ReadFile("/var/run/ppio/data/dummy-players.json")
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
