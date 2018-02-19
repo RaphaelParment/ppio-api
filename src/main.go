@@ -1,53 +1,31 @@
 package main
 
 import (
-	"gopkg.in/olivere/elastic.v5"
 	"context"
-	"ppio/models"
-	"ppio/config"
+	"log"
+	"net/http"
+	"os"
+	"ppio/routes"
 	"ppio/utils"
-	"strconv"
+	"time"
+
+	"github.com/coreos/go-systemd/daemon"
+	"gopkg.in/olivere/elastic.v5"
 )
-
-
-func createIndex(indexName string, client *elastic.Client,
-	ctx context.Context) {
-
-	// Create the players index
-	exists, err := client.IndexExists(indexName).Do(ctx)
-	if exists {
-		_, err := client.DeleteIndex(indexName).Do(ctx)
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	if indexName == "players" {
-		_, err = client.CreateIndex(indexName).
-			BodyString(config.PlayerMapping).Do(ctx)
-	} else if indexName == "games" {
-		_, err = client.CreateIndex(indexName).
-			BodyString(config.GameMapping).Do(ctx)
-	}
-
-	if err != nil {
-		panic(err)
-	}
-}
-
-
-
 
 func main() {
 
-	ctx := context.TODO()
+	end := make(chan bool)
+	ctx := context.Background()
 
-	client, err := elastic.NewClient()
+	client, err := elastic.NewClient(
+		elastic.SetURL("http://172.17.0.2:9200"),                           // Docker default public address for elasticsearch.
+		elastic.SetErrorLog(log.New(os.Stderr, "ELASTIC ", log.LstdFlags)), // Specific logger for the package.
+	)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Could not connect to the ElasticSearch instance: %v\n", err)
 	}
 	defer client.Stop()
-
 
 	players := utils.GetPlayers()
 
@@ -60,6 +38,33 @@ func main() {
 	for j, game := range games {
 
 		game.Insert(client, ctx, j)
+	}
+
+	// Handle the routes with gorillamux
+	go func() {
+		http.ListenAndServe(":9000", routes.GetRouter(client))
+	}()
+
+	go func() {
+		interval, err := daemon.SdWatchdogEnabled(false)
+		if err != nil || interval == 0 {
+			log.Printf("Could not start the watchdog for SystemD...")
+		}
+		for {
+			daemon.SdNotify(false, "WATCHDOG=1")
+			time.Sleep(interval / 3)
+		}
+	}()
+
+	// TODO check where it could be sent ?
+	// Handle the termination of the program properly.
+	for {
+		select {
+		case StopProg := <-end:
+			if StopProg {
+				os.Exit(0)
+			}
+		}
 	}
 
 }
