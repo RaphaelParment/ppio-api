@@ -13,19 +13,11 @@ import (
 	"gopkg.in/olivere/elastic.v5"
 )
 
-func main() {
 
-	end := make(chan bool)
-	ctx := context.Background()
-
-	client, err := elastic.NewClient(
-		elastic.SetURL("http://172.17.0.2:9200"),                           // Docker default public address for elasticsearch.
-		elastic.SetErrorLog(log.New(os.Stderr, "ELASTIC ", log.LstdFlags)), // Specific logger for the package.
-	)
-	if err != nil {
-		log.Fatalf("Could not connect to the ElasticSearch instance: %v\n", err)
-	}
-	defer client.Stop()
+/**
+Function which inserts dummy data into the database.
+ */
+func initialiseDb(ctx context.Context) {
 
 	players := utils.GetPlayers()
 
@@ -39,6 +31,24 @@ func main() {
 
 		game.Insert(client, ctx, j)
 	}
+}
+
+
+func main() {
+
+	end := make(chan bool)
+        ctx := context.Background()
+
+	client, err := elastic.NewClient(
+                elastic.SetURL("http://172.17.0.2:9200"),                           // Docker default public address for elasticsearch.
+                elastic.SetErrorLog(log.New(os.Stderr, "ELASTIC ", log.LstdFlags)), // Specific logger for the package.
+        )
+        if err != nil {
+                log.Fatalf("Could not connect to the ElasticSearch instance: %v\n", err)
+        }
+        defer client.Stop()
+
+	//initialiseDb(ctx)
 
 	// Handle the routes with gorillamux
 	go func() {
