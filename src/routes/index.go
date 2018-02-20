@@ -12,6 +12,7 @@ func GetRouter(client *elastic.Client) *mux.Router {
 	r := mux.NewRouter()
 	s := r.PathPrefix("/ppio").Subrouter()
 	s.HandleFunc("/players/{playerID}", getPlayerHandler(client)).Methods(http.MethodGet)
+	s.HandleFunc("/games", getGamesHandler(client)).Methods(http.MethodGet)
 	http.Handle("/", r)
 	return r
 }

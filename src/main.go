@@ -37,7 +37,7 @@ func initialiseDb(ctx context.Context) {
 func main() {
 
 	end := make(chan bool)
-        ctx := context.Background()
+	ctx := context.Background()
 
 	client, err := elastic.NewClient(
                 elastic.SetURL("http://172.17.0.2:9200"),                           // Docker default public address for elasticsearch.
