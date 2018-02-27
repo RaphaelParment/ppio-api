@@ -4,9 +4,12 @@ import (
 	"gopkg.in/olivere/elastic.v5"
 	"net/http"
 	"context"
-	"io"
+	"ppio-web/models"
+	"reflect"
 	"encoding/json"
-	"../models"
+	"github.com/gorilla/mux"
+	"io/ioutil"
+	"log"
 )
 
 func getGamesHandler(client *elastic.Client) http.HandlerFunc {

@@ -6,7 +6,7 @@ import (
 	"os"
 	"io/ioutil"
 	"math/rand"
-	"ppio/models"
+	"ppio-web/models"
 )
 
 func GetPlayers() []models.Player {
