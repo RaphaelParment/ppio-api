@@ -1,15 +1,6 @@
 package routes
 
-import (
-	"context"
-	"fmt"
-	"log"
-	"net/http"
-
-	"github.com/gorilla/mux"
-	elastic "gopkg.in/olivere/elastic.v5"
-)
-
+/*
 func getPlayerHandler(client *elastic.Client) http.HandlerFunc {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -42,3 +33,4 @@ func getPlayerHandler(client *elastic.Client) http.HandlerFunc {
 	}
 	return http.HandlerFunc(fn)
 }
+*/

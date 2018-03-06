@@ -3,10 +3,12 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"io/ioutil"
+	"log"
 	"math/rand"
-	"ppio-web/models"
+	"os"
+	"ppio/models"
+	"time"
 )
 
 func GetPlayers() []models.Player {
@@ -52,19 +54,22 @@ func GenerateGames(players []models.Player) []models.Game {
 				}
 
 				// generate random datetime (1 month span)
-				day := rand.Intn(31) + 1
+				day := rand.Intn(28) + 1
 				hour := rand.Intn(24)
 				minute := rand.Intn(60)
 
-				datetime := fmt.Sprintf("2018-02-%d %d:%d:00",
+				datetime := fmt.Sprintf("2018-02-%02d %02d:%02d:00",
 					day, hour, minute)
-
+				objDatetime, err := time.Parse("2006-01-02 15:04:05", datetime)
+				if err != nil {
+					log.Fatalf("Could not parse date time %s. Error: %v\n", datetime, err)
+				}
 				game := models.Game{
-					DateTime: datetime,
-					Player1: homePlayer,
-					Player2: awayPlayer,
-					Score1: homeScore,
-					Score2: awayScore,
+					DateTime: objDatetime,
+					Player1:  homePlayer,
+					Player2:  awayPlayer,
+					Score1:   homeScore,
+					Score2:   awayScore,
 				}
 
 				games = append(games, game)

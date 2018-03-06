@@ -1,18 +1,7 @@
 package routes
 
-import (
-	"gopkg.in/olivere/elastic.v5"
-	"net/http"
-	"context"
-	"ppio-web/models"
-	"reflect"
-	"encoding/json"
-	"github.com/gorilla/mux"
-	"io/ioutil"
-	"log"
-)
-
-func getGameHandler(client *elastic.Client) http.HandlerFunc {
+/*
+func getGameHandler(dbConn *sql.DB) http.HandlerFunc {
 
 	fn := func(w http.ResponseWriter, req *http.Request) {
 
@@ -45,7 +34,7 @@ func getGameHandler(client *elastic.Client) http.HandlerFunc {
 	return http.HandlerFunc(fn)
 }
 
-func getGamesHandler(client *elastic.Client) http.HandlerFunc {
+func getGamesHandler(dbConn *sql.DB) http.HandlerFunc {
 
 	fn := func(w http.ResponseWriter, req *http.Request) {
 
@@ -71,7 +60,6 @@ func getGamesHandler(client *elastic.Client) http.HandlerFunc {
 			From(0).Size(int(count)).
 			Do(ctx)
 
-
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -82,10 +70,10 @@ func getGamesHandler(client *elastic.Client) http.HandlerFunc {
 			if t, ok := item.(models.Game); ok {
 				game = models.Game{
 					DateTime: t.DateTime,
-					Player1: t.Player1,
-					Player2: t.Player2,
-					Score1: t.Score1,
-					Score2: t.Score2,
+					Player1:  t.Player1,
+					Player2:  t.Player2,
+					Score1:   t.Score1,
+					Score2:   t.Score2,
 				}
 				games = append(games, game)
 			}
@@ -98,7 +86,7 @@ func getGamesHandler(client *elastic.Client) http.HandlerFunc {
 	return http.HandlerFunc(fn)
 }
 
-func addGameHandler(client *elastic.Client) http.HandlerFunc {
+func addGameHandler(dbConn *sql.DB) http.HandlerFunc {
 
 	fn := func(w http.ResponseWriter, req *http.Request) {
 
@@ -139,3 +127,4 @@ func addGameHandler(client *elastic.Client) http.HandlerFunc {
 
 	return http.HandlerFunc(fn)
 }
+*/

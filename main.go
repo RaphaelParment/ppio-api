@@ -1,74 +1,58 @@
 package main
 
 import (
-	"context"
+	"database/sql"
 	"log"
-	"net/http"
 	"os"
-	"ppio-web/routes"
-	"ppio-web/utils"
-//	"time"
+	"ppio/utils"
 
-//	"github.com/coreos/go-systemd/daemon"
-	"gopkg.in/olivere/elastic.v5"
 	"fmt"
 
+	_ "github.com/lib/pq"
 )
-
 
 /**
 Function which inserts dummy data into the database.
- */
-func initialiseDb(ctx context.Context, client *elastic.Client) {
+*/
+func initialiseDb() *sql.DB {
+
+	db, err := sql.Open("postgres", "postgresql://ppio_user@localhost:26257/ppio?sslmode=disable")
+	if err != nil {
+		log.Fatal("error connecting to the database: ", err)
+	}
 
 	players := utils.GetPlayers()
 
-	for i, player := range players {
-		player.Insert(client, ctx, i)
+	for _, player := range players {
+		lastID := player.Insert(db)
+		player.ID = lastID
 	}
 	fmt.Println("Players inserted")
 
 	games := utils.GenerateGames(players)
 
-	for j, game := range games {
+	for _, game := range games {
 
-		game.Insert(client, ctx, j)
+		_ = game.Insert(db)
 	}
 	fmt.Println("Games inserted")
-}
 
+	return db
+}
 
 func main() {
 
 	end := make(chan bool)
-	//ctx := context.Background()
 
-	client, err := elastic.NewClient(
-                elastic.SetURL("http://172.17.0.2:9200"),                           // Docker default public address for elasticsearch.
-                elastic.SetErrorLog(log.New(os.Stderr, "ELASTIC ", log.LstdFlags)), // Specific logger for the package.
-        )
-        if err != nil {
-                log.Fatalf("Could not connect to the ElasticSearch instance: %v\n", err)
-        }
-        defer client.Stop()
-
-	//initialiseDb(ctx, client)
+	dbConn := initialiseDb()
+	defer dbConn.Close()
 
 	// Handle the routes with gorillamux
-	go func() {
-		http.ListenAndServe(":9000", routes.GetRouter(client))
-	}()
-
-	//go func() {
-	//	interval, err := daemon.SdWatchdogEnabled(false)
-	//	if err != nil || interval == 0 {
-	//		log.Printf("Could not start the watchdog for SystemD...")
-	//	}
-	//	for {
-	//		daemon.SdNotify(false, "WATCHDOG=1")
-	//		time.Sleep(interval / 3)
-	//	}
-	//}()
+	/*
+		go func() {
+			http.ListenAndServe(":9000", routes.GetRouter(client))
+		}()
+	*/
 
 	// TODO check where it could be sent ?
 	// Handle the termination of the program properly.
