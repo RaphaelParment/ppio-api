@@ -21,10 +21,15 @@ func initialiseDb() *sql.DB {
 		log.Fatal("error connecting to the database: ", err)
 	}
 
+	return db
+}
+
+func fillDb(dbConn *sql.DB) {
+
 	players := utils.GetPlayers()
 
 	for _, player := range players {
-		lastID := player.Insert(db)
+		lastID := player.Insert(dbConn)
 		player.ID = lastID
 	}
 	fmt.Println("Players inserted")
@@ -33,11 +38,9 @@ func initialiseDb() *sql.DB {
 
 	for _, game := range games {
 
-		_ = game.Insert(db)
+		_ = game.Insert(dbConn)
 	}
 	fmt.Println("Games inserted")
-
-	return db
 }
 
 func main() {
@@ -46,6 +49,11 @@ func main() {
 
 	dbConn := initialiseDb()
 	defer dbConn.Close()
+
+	if len(os.Args) == 2 && os.Args[1] == "fillDb" {
+		fillDb(dbConn)
+	}
+
 
 	// Handle the routes with gorillamux
 	/*
