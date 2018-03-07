@@ -11,19 +11,22 @@ import (
 	"time"
 )
 
-func GetPlayers() []models.Player {
+func GetPlayers() []*models.Player {
 	raw, err := ioutil.ReadFile("/var/run/ppio/data/dummy-players.json")
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 
-	var c []models.Player
-	json.Unmarshal(raw, &c)
+	var c []*models.Player
+	err = json.Unmarshal(raw, &c)
+	if err != nil {
+		log.Fatalf("Error occured when unmarshalling the dummy players. Error :%v", err)
+	}
 	return c
 }
 
-func GenerateGames(players []models.Player) []models.Game {
+func GenerateGames(players []*models.Player) []models.Game {
 
 	var games []models.Game
 
@@ -66,8 +69,8 @@ func GenerateGames(players []models.Player) []models.Game {
 				}
 				game := models.Game{
 					DateTime: objDatetime,
-					Player1:  homePlayer,
-					Player2:  awayPlayer,
+					Player1:  *homePlayer,
+					Player2:  *awayPlayer,
 					Score1:   homeScore,
 					Score2:   awayScore,
 				}

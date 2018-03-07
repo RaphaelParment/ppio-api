@@ -24,5 +24,7 @@ func (game *Game) Insert(dbConn *sql.DB) int64 {
 		log.Fatalf("Could not insert game %v. Error: %v\n", game, err)
 	}
 
+	log.Printf("Inserted game with ID '%d'", id)
+
 	return id
 }

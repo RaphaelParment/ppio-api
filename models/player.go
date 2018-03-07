@@ -22,5 +22,7 @@ func (player *Player) Insert(dbConn *sql.DB) int64 {
 		log.Fatalf("Could not create a new player %v. Error: %v\n", player, err)
 	}
 
+	log.Printf("Inserted player with ID '%d'", id)
+
 	return id
 }
