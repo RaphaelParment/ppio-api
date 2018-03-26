@@ -49,6 +49,21 @@ func getPlayerHandler(dbConn *sql.DB) http.HandlerFunc {
 	return http.HandlerFunc(fn)
 }
 
+func addPlayerHandler(dbConn *sql.DB) http.HandlerFunc {
+
+	fn := func(w http.ResponseWriter, req *http.Request) {
+
+		var player models.Player
+		if _, err := player.Insert(dbConn); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
+	}
+
+	return http.HandlerFunc(fn)
+}
+
 func getAllPlayersHandler(dbConn *sql.DB) http.HandlerFunc {
 
 	fn := func(w http.ResponseWriter, req *http.Request) {

@@ -12,19 +12,21 @@ type Player struct {
 	Points    int    `json:"points"`
 }
 
-func (player *Player) Insert(dbConn *sql.DB) int64 {
+// Insert Add a new player in db.
+func (player *Player) Insert(dbConn *sql.DB) (int64, error) {
 
 	var id int64
 
 	err := dbConn.QueryRow("INSERT INTO player (first_name, last_name, points) VALUES ($1,$2,$3) RETURNING id", player.FirstName, player.LastName, player.Points).Scan(&id)
 
 	if err != nil {
-		log.Fatalf("Could not create a new player %v. Error: %v\n", player, err)
+		log.Printf("Could not create a new player %v. Error: %v\n", player, err)
+		return 0, err
 	}
 
 	log.Printf("Inserted player with ID '%d'", id)
 
-	return id
+	return id, nil
 }
 
 // GetByID Fetch player by ID.
@@ -34,7 +36,8 @@ func (player *Player) GetByID(dbConn *sql.DB) error {
 		&player.ID).Scan(&player.ID, &player.FirstName, &player.LastName, &player.Points)
 
 	if err != nil {
-		log.Fatalf("Could not get game %v, err: %v", player, err)
+		log.Printf("Could not get game %v, err: %v", player, err)
+		return err
 	}
 
 	return nil
