@@ -11,12 +11,13 @@ import (
 	_ "github.com/lib/pq"
 	"net/http"
 	"ppio/routes"
+	"flag"
 )
 
 /**
 Function which inserts dummy data into the database.
 */
-func initialiseDb() *sql.DB {
+func initialiseDb() *sql.DB { 
 
 	db, err := sql.Open("postgres", "postgresql://ppio_user@localhost:26257/ppio?sslmode=disable")
 	if err != nil {
@@ -38,7 +39,7 @@ func fillDb(dbConn *sql.DB) {
 
 	games := utils.GenerateGames(players)
 
-	for _, game := range games {
+	for _, game := range games { 
 
 		_ = game.Insert(dbConn)
 	}
@@ -47,22 +48,24 @@ func fillDb(dbConn *sql.DB) {
 
 func main() {
 
+	initDbData := flag.Bool("initDbData", false, "Insert dummy data in database.")
+
+	flag.Parse()
 	end := make(chan bool)
 
 	dbConn := initialiseDb()
 	defer dbConn.Close()
 
-	if len(os.Args) == 2 && os.Args[1] == "fillDb" {
+
+	if *initDbData {
 		fillDb(dbConn)
 	}
-
 
 	// Handle the routes with gorillamux
 
 	go func() {
 		http.ListenAndServe(":9000", routes.GetRouter(dbConn))
 	}()
-
 
 	// TODO check where it could be sent ?
 	// Handle the termination of the program properly.
