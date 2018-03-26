@@ -33,7 +33,7 @@ func fillDb(dbConn *sql.DB) {
 	players := utils.GetPlayers()
 
 	for _, player := range players {
-		lastID := player.Insert(dbConn)
+		lastID, _ := player.Insert(dbConn)
 		player.ID = lastID
 	}
 	fmt.Println("Players inserted")
@@ -64,7 +64,7 @@ func main() {
 	// Handle the routes with gorillamux
 
 	go func() {
-		http.ListenAndServe(":9000", routes.GetRouter(dbConn))
+		http.ListenAndServe(":9001", routes.GetRouter(dbConn))
 	}()
 
 	// TODO check where it could be sent ?

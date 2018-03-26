@@ -36,7 +36,7 @@ func (player *Player) GetByID(dbConn *sql.DB) error {
 		&player.ID).Scan(&player.ID, &player.FirstName, &player.LastName, &player.Points)
 
 	if err != nil {
-		log.Printf("Could not get game %v, err: %v", player, err)
+		log.Printf("Could not get player %v, err: %v", player, err)
 		return err
 	}
 
@@ -59,4 +59,24 @@ func (player *Player) GetAll(dbConn *sql.DB) ([]Player, error) {
 	}
 
 	return players, nil
+}
+
+// Update Update the given player in database.
+func (player *Player) Update(dbConn *sql.DB) (int64, error) {
+
+	result, err := dbConn.Exec("UPDATE player SET first_name = $1, last_name = $2, points = $3 WHERE id = $4",
+		player.FirstName, player.LastName, player.Points, player.ID)
+
+	if err != nil {
+		log.Printf("Could not update player in DB. Player: %v / Error: %v", player, err)
+		return 0, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Printf("Could not get the amount of affected rows. Error: %v", err)
+		return 0, err
+	}
+
+	return rowsAffected, nil
 }

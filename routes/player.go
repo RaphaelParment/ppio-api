@@ -3,6 +3,7 @@ package routes
 import (
 	"database/sql"
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"ppio/models"
@@ -25,7 +26,6 @@ func getPlayerHandler(dbConn *sql.DB) http.HandlerFunc {
 				return
 			}
 			player.ID = int64(id)
-			player.FirstName = vars["first_name"]
 			err = player.GetByID(dbConn)
 
 			if err != nil {
@@ -89,6 +89,49 @@ func getAllPlayersHandler(dbConn *sql.DB) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(playerJSON)
+	}
+
+	return http.HandlerFunc(fn)
+}
+
+func updatePlayerHandler(dbConn *sql.DB) http.HandlerFunc {
+
+	fn := func(w http.ResponseWriter, req *http.Request) {
+
+		vars := mux.Vars(req)
+		if playerID, ok := vars["playerID"]; ok {
+			var player models.Player
+			var id int
+			var err error
+			if id, err = strconv.Atoi(playerID); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			player.ID = int64(id)
+			requestBytes, err := ioutil.ReadAll(req.Body)
+			if err != nil {
+				log.Printf("Could not handle PUT request for update player. Error: %v", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			err = json.Unmarshal(requestBytes, &player)
+			if err != nil {
+				log.Printf("Could not unmarshal players from body: %s, err: %v",
+					string(requestBytes), err)
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			_, err = player.Update(dbConn)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+
+			} else {
+				w.Header().Set("Content-Type", "application/json")
+				w.Write(requestBytes)
+			}
+		} else {
+			http.Error(w, "No player ID given", http.StatusBadRequest)
+		}
 	}
 
 	return http.HandlerFunc(fn)
