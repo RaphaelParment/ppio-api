@@ -9,6 +9,8 @@ import (
 	"fmt"
 
 	_ "github.com/lib/pq"
+	"net/http"
+	"ppio/routes"
 )
 
 /**
@@ -56,11 +58,11 @@ func main() {
 
 
 	// Handle the routes with gorillamux
-	/*
-		go func() {
-			http.ListenAndServe(":9000", routes.GetRouter(client))
-		}()
-	*/
+
+	go func() {
+		http.ListenAndServe(":9000", routes.GetRouter(dbConn))
+	}()
+
 
 	// TODO check where it could be sent ?
 	// Handle the termination of the program properly.

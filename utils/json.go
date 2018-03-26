@@ -68,11 +68,11 @@ func GenerateGames(players []*models.Player) []models.Game {
 					log.Fatalf("Could not parse date time %s. Error: %v\n", datetime, err)
 				}
 				game := models.Game{
-					DateTime: objDatetime,
-					Player1:  *homePlayer,
-					Player2:  *awayPlayer,
-					Score1:   homeScore,
-					Score2:   awayScore,
+					DateTime:  objDatetime,
+					Player1ID: homePlayer.ID,
+					Player2ID: awayPlayer.ID,
+					Score1:    homeScore,
+					Score2:    awayScore,
 				}
 
 				games = append(games, game)

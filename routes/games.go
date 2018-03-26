@@ -1,30 +1,39 @@
 package routes
 
-/*
+import (
+	"database/sql"
+	"net/http"
+	"github.com/gorilla/mux"
+	"ppio/models"
+	"log"
+	"encoding/json"
+
+	"io/ioutil"
+)
+
 func getGameHandler(dbConn *sql.DB) http.HandlerFunc {
 
 	fn := func(w http.ResponseWriter, req *http.Request) {
 
+		var game models.Game
 		vars := mux.Vars(req)
-		ctx := context.Background()
 		gameID := vars["gameID"]
-		gameGet, err := client.
-			Get().
-			Index("games").
-			Type("doc").
-			Id(gameID).
-			Do(ctx)
+
+		err := dbConn.QueryRow("SELECT id, player1_id, player2_id, score1," +
+			" score2, datetime FROM game WHERE id = $1",
+			gameID).Scan(&game.ID, &game.Player1ID, &game.Player2ID,
+				&game.Score1, &game.Score2, &game.DateTime)
 
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			log.Fatalf("Could not get game %v, err: %v", game, err)
 		}
 
-		gameJSON, err := gameGet.Source.MarshalJSON()
+
+		gameJSON, err := json.Marshal(game)
 
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			log.Fatalf("Could not parse game: %v, err: %v",
+				game, err)
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -39,48 +48,32 @@ func getGamesHandler(dbConn *sql.DB) http.HandlerFunc {
 	fn := func(w http.ResponseWriter, req *http.Request) {
 
 		var games []models.Game
-		ctx := context.Background()
-
-		// Fetching count
-		count, err := client.Count().
-			Index("games").
-			Type("doc").
-			Do(ctx)
-
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		// Perform search
-		docMatchQuery := elastic.NewTermQuery("_type", "doc")
-		result, err := client.Search().
-			Index("games").
-			Query(docMatchQuery).
-			From(0).Size(int(count)).
-			Do(ctx)
-
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
 		var game models.Game
-		for _, item := range result.Each(reflect.TypeOf(game)) {
-			if t, ok := item.(models.Game); ok {
-				game = models.Game{
-					DateTime: t.DateTime,
-					Player1:  t.Player1,
-					Player2:  t.Player2,
-					Score1:   t.Score1,
-					Score2:   t.Score2,
-				}
-				games = append(games, game)
+
+		results, err := dbConn.Query("SELECT id, player1_id, player2_id, score1," +
+			" score2, datetime FROM game")
+
+		if err != nil {
+			log.Fatalf("Could not get all games, err: %v", err)
+		}
+
+		for results.Next() {
+			err := results.Scan(&game.ID, &game.Player1ID, &game.Player2ID,
+				&game.Score1, &game.Score2, &game.DateTime)
+			if err != nil {
+				log.Fatalf("Could not parse game, err: %v", err)
 			}
+			games = append(games, game)
+		}
+
+		gamesJSON, err := json.Marshal(games)
+		if err != nil {
+			log.Fatalf("Could not parse games to JSON, err: %v", err)
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(games)
+		w.Write(gamesJSON)
+
 	}
 
 	return http.HandlerFunc(fn)
@@ -91,7 +84,6 @@ func addGameHandler(dbConn *sql.DB) http.HandlerFunc {
 	fn := func(w http.ResponseWriter, req *http.Request) {
 
 		var game models.Game
-		ctx := context.Background()
 		reqBody, err := ioutil.ReadAll(req.Body)
 
 		if err != nil {
@@ -109,16 +101,13 @@ func addGameHandler(dbConn *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		_, err = client.Index().
-			Index("games").
-			Type("doc").
-			BodyJson(game).
-			Refresh("true").
-			Do(ctx)
+		_, err = dbConn.Exec("INSERT INTO game (player1_id, player2_id, score1, score2, datetime)" +
+			"VALUES ($1, $2, $3, $4, NOW())", game.Player1ID, game.Player2ID,
+				game.Score1, game.Score2)
 
 		if err != nil {
-			log.Println("Could not insert game")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Println("Could not insert game.")
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
@@ -127,4 +116,3 @@ func addGameHandler(dbConn *sql.DB) http.HandlerFunc {
 
 	return http.HandlerFunc(fn)
 }
-*/
