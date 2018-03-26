@@ -16,7 +16,7 @@ func GetRouter(dbConn *sql.DB) *mux.Router {
 	s.HandleFunc("/players", getAllPlayersHandler(dbConn)).Methods(http.MethodGet)
 	s.HandleFunc("/players", addGameHandler(dbConn)).Methods(http.MethodPost)
 	s.HandleFunc("/games/{gameID}", getGameHandler(dbConn)).Methods(http.MethodGet)
-	// s.HandleFunc("/games/{gameID}", updateGameHandler(dbConn)).Methods(http.MethodPut)
+	s.HandleFunc("/games/{gameID}", updateGameHandler(dbConn)).Methods(http.MethodPut)
 	s.HandleFunc("/games", getGamesHandler(dbConn)).Methods(http.MethodGet)
 	s.HandleFunc("/games", addGameHandler(dbConn)).Methods(http.MethodPost)
 	http.Handle("/", r)
