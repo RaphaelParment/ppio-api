@@ -17,7 +17,7 @@ CREATE TABLE player (
 id INT NOT NULL DEFAULT unique_rowid(),
 first_name STRING NULL,
 last_name STRING NULL,
-score INT NULL,
+points INT NULL,
 CONSTRAINT "primary" PRIMARY KEY (id ASC),
-FAMILY "primary" (id, first_name, last_name, score)
+FAMILY "primary" (id, first_name, last_name, points)
 );
