@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"ppio/models"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -14,20 +15,27 @@ func getPlayerHandler(dbConn *sql.DB) http.HandlerFunc {
 
 	fn := func(w http.ResponseWriter, req *http.Request) {
 
-		var player models.Player
 		vars := mux.Vars(req)
 		if playerID, ok := vars["playerID"]; ok {
-			err := dbConn.QueryRow("SELECT id, first_name, last_name, points FROM player WHERE id = $1",
-				playerID).Scan(&player.ID, &player.FirstName, &player.LastName, &player.Points)
+			var player models.Player
+			var id int
+			var err error
+			if id, err = strconv.Atoi(playerID); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			player.ID = int64(id)
+			player.FirstName = vars["first_name"]
+			err = player.GetByID(dbConn)
 
 			if err != nil {
-				log.Fatalf("Could not get game %v, err: %v", player, err)
+				log.Fatalf("Could not get player %v, err: %v", player, err)
 			}
 
 			playerJSON, err := json.Marshal(player)
 
 			if err != nil {
-				log.Fatalf("Could not parse game: %v, err: %v",
+				log.Fatalf("Could not parse player: %v, err: %v",
 					player, err)
 			}
 
@@ -36,6 +44,36 @@ func getPlayerHandler(dbConn *sql.DB) http.HandlerFunc {
 		} else {
 			http.Error(w, "No player ID given", http.StatusBadRequest)
 		}
+	}
+
+	return http.HandlerFunc(fn)
+}
+
+func getAllPlayersHandler(dbConn *sql.DB) http.HandlerFunc {
+
+	fn := func(w http.ResponseWriter, req *http.Request) {
+
+		var player models.Player
+		players, err := player.GetAll(dbConn)
+
+		if err != nil {
+			log.Printf("Could not get players. Error: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		playerJSON, err := json.Marshal(players)
+
+		if err != nil {
+			log.Printf("Could not marshal players: %v, err: %v",
+				players, err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(playerJSON)
 	}
 
 	return http.HandlerFunc(fn)
