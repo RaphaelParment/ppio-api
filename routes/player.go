@@ -1,36 +1,42 @@
 package routes
 
+import (
+	"database/sql"
+	"encoding/json"
+	"log"
+	"net/http"
+	"ppio/models"
 
-/*
-func GetPlayer(dbConn *sql.DB) http.HandlerFunc {
+	"github.com/gorilla/mux"
+)
+
+func getPlayerHandler(dbConn *sql.DB) http.HandlerFunc {
 
 	fn := func(w http.ResponseWriter, req *http.Request) {
 
 		var player models.Player
 		vars := mux.Vars(req)
 		if playerID, ok := vars["playerID"]; ok {
-			err := dbConn.QueryRow("SELECT id, player1_id, player2_id, score1," +
-				" score2, datetime FROM game WHERE id = $1",
-				gameID).Scan(&game.ID, &game.Player1ID, &game.Player2ID,
-				&game.Score1, &game.Score2, &game.DateTime)
+			err := dbConn.QueryRow("SELECT id, first_name, last_name, points FROM player WHERE id = $1",
+				playerID).Scan(&player.ID, &player.FirstName, &player.LastName, &player.Points)
 
 			if err != nil {
-				log.Fatalf("Could not get game %v, err: %v", game, err)
+				log.Fatalf("Could not get game %v, err: %v", player, err)
 			}
 
-
-			gameJSON, err := json.Marshal(game)
+			playerJSON, err := json.Marshal(player)
 
 			if err != nil {
 				log.Fatalf("Could not parse game: %v, err: %v",
-					game, err)
+					player, err)
 			}
-		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(gameJSON)
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(playerJSON)
+		} else {
+			http.Error(w, "No player ID given", http.StatusBadRequest)
+		}
 	}
 
 	return http.HandlerFunc(fn)
 }
-*/

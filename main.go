@@ -8,16 +8,17 @@ import (
 
 	"fmt"
 
-	_ "github.com/lib/pq"
+	"flag"
 	"net/http"
 	"ppio/routes"
-	"flag"
+
+	_ "github.com/lib/pq"
 )
 
 /**
 Function which inserts dummy data into the database.
 */
-func initialiseDb() *sql.DB { 
+func initialiseDb() *sql.DB {
 
 	db, err := sql.Open("postgres", "postgresql://ppio_user@localhost:26257/ppio?sslmode=disable")
 	if err != nil {
@@ -39,7 +40,7 @@ func fillDb(dbConn *sql.DB) {
 
 	games := utils.GenerateGames(players)
 
-	for _, game := range games { 
+	for _, game := range games {
 
 		_ = game.Insert(dbConn)
 	}
@@ -55,7 +56,6 @@ func main() {
 
 	dbConn := initialiseDb()
 	defer dbConn.Close()
-
 
 	if *initDbData {
 		fillDb(dbConn)
