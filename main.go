@@ -42,7 +42,7 @@ func fillDb(dbConn *sql.DB) {
 
 	for _, game := range games {
 
-		_ = game.Insert(dbConn)
+		_, _ = game.Insert(dbConn)
 	}
 	fmt.Println("Games inserted")
 }

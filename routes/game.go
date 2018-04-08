@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"ppio/models"
 	"strconv"
-
 	"github.com/gorilla/mux"
 )
 
@@ -148,5 +147,37 @@ func updateGameHandler(dbConn *sql.DB) http.HandlerFunc {
 			w.Write(reqBody)
 		}
 	}
+	return http.HandlerFunc(fn)
+}
+
+func deleteGameHandler(dbConn *sql.DB) http.HandlerFunc {
+
+	fn := func(w http.ResponseWriter, req *http.Request) {
+
+		var game models.Game
+		vars := mux.Vars(req)
+		gameID, err := strconv.ParseInt(vars["gameID"], 10, 64)
+
+		if err != nil {
+			log.Printf("Supplied ID is not numberocal")
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		game.ID = gameID
+		game.GetByID(dbConn)
+
+		gameJSON, err := json.Marshal(game)
+
+		_, err = game.Delete(dbConn)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(gameJSON)
+	}
+
 	return http.HandlerFunc(fn)
 }

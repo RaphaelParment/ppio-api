@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"time"
+	"errors"
 )
 
 type Game struct {
@@ -80,4 +81,29 @@ func (game *Game) Update(dbConn *sql.DB) (int64, error) {
 
 	return rowsAffected, nil
 
+}
+
+func (game *Game) Delete(dbConn *sql.DB) (int64, error) {
+	result, err := dbConn.Exec("DELETE FROM game WHERE id = $1",
+		game.ID)
+
+	if err != nil {
+		log.Printf("Could not delete game: %v, err: %v", game, err)
+		return 0, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Printf("Could not get the number of affected rows while deleting game: %v. Error: %v",
+			game, err)
+		return 0, err
+	}
+
+	if rowsAffected != 1 {
+		log.Printf("Delete more than 1 game... Error")
+		err = errors.New("deleting more than 1 item")
+		return 0, err
+	}
+
+	return game.ID, nil
 }
