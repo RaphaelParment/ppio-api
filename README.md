@@ -10,3 +10,8 @@ All the endpoints are prefixed by /ppio.
 | `/players/:id` | `GET`  | Get the player indexed by `{id}`    |
 | `/players/:id` | `PUT`  | Update the player indexed by `{id}` |
 | `/players`     | `POST` | Create a new player and persist it  |
+| `/games` | `GET` | Get the full list of games.|
+| `/games` | `POST` | Create a new game and persist it. |
+| `/games/:id` | `GET`| Get the game indexed by `{id}`.|
+| `/games/:id` | `PUT`| Update the game indexed by `{id}`.|
+| `/games/:id` | `DELETE`| Delet the game indexed by `{id}`. |
