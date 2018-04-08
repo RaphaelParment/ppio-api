@@ -80,7 +80,7 @@ func addGameHandler(dbConn *sql.DB) http.HandlerFunc {
 
 		if err != nil {
 			log.Println("Could not read request body while adding game.")
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -89,17 +89,15 @@ func addGameHandler(dbConn *sql.DB) http.HandlerFunc {
 		// Making sure request body is well formatted
 		if err != nil {
 			log.Println("Request body does not match game structure")
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		_, err = dbConn.Exec("INSERT INTO game (player1_id, player2_id, score1, score2, datetime)"+
-			"VALUES ($1, $2, $3, $4, NOW())", game.Player1ID, game.Player2ID,
-			game.Score1, game.Score2)
+		_, err = game.Insert(dbConn)
 
 		if err != nil {
 			log.Println("Could not insert game.")
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 

@@ -15,18 +15,19 @@ type Game struct {
 	Score2    int       `json:"score2"`
 }
 
-func (game *Game) Insert(dbConn *sql.DB) int64 {
+func (game *Game) Insert(dbConn *sql.DB) (int64, error) {
 
 	var id int64
 	err := dbConn.QueryRow("INSERT INTO game (player1_id, player2_id, score1, score2, datetime) VALUES($1, $2, $3, $4, $5) RETURNING id", game.Player1ID, game.Player2ID, game.Score1, game.Score2, game.DateTime).Scan(&id)
 
 	if err != nil {
-		log.Fatalf("Could not insert game %v. Error: %v\n", game, err)
+		log.Printf("Could not insert game %v. Error: %v\n", game, err)
+		return 0, err
 	}
 
 	log.Printf("Inserted game with ID '%d'", id)
 
-	return id
+	return id, nil
 }
 
 func (game *Game) GetByID(dbConn *sql.DB) error {
