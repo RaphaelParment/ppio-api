@@ -71,8 +71,6 @@ func GenerateGames(players []*models.Player) []models.Game {
 					DateTime:  objDatetime,
 					Player1ID: homePlayer.ID,
 					Player2ID: awayPlayer.ID,
-					Score1:    homeScore,
-					Score2:    awayScore,
 				}
 
 				games = append(games, game)
