@@ -2,24 +2,29 @@ package models
 
 import (
 	"database/sql"
+	"errors"
 	"log"
 	"time"
-	"errors"
 )
 
+// Game structure
 type Game struct {
 	ID        int64     `json:"id,omitempty"`
 	DateTime  time.Time `json:"datetime,omitempty"`
 	Player1ID int64     `json:"player1Id"`
 	Player2ID int64     `json:"player2Id"`
-	Score1    int       `json:"score1"`
-	Score2    int       `json:"score2"`
+	Sets      []Set     `json:"sets"`
 }
 
+// Insert game
 func (game *Game) Insert(dbConn *sql.DB) (int64, error) {
 
 	var id int64
-	err := dbConn.QueryRow("INSERT INTO game (player1_id, player2_id, score1, score2, datetime) VALUES($1, $2, $3, $4, $5) RETURNING id", game.Player1ID, game.Player2ID, game.Score1, game.Score2, game.DateTime).Scan(&id)
+	err := dbConn.QueryRow(`
+		INSERT INTO game 
+		(player1_id, player2_id, datetime)
+		VALUES($1, $2, $3) RETURNING id`,
+		game.Player1ID, game.Player2ID, game.DateTime).Scan(&id)
 
 	if err != nil {
 		log.Printf("Could not insert game %v. Error: %v\n", game, err)
@@ -31,23 +36,39 @@ func (game *Game) Insert(dbConn *sql.DB) (int64, error) {
 	return id, nil
 }
 
+// GetByID Returns a game with its corresponding sets.
 func (game *Game) GetByID(dbConn *sql.DB) error {
 
-	err := dbConn.QueryRow("SELECT id, player1_id, player2_id, score1, score2, datetime FROM game WHERE id = $1",
-		&game.ID).Scan(&game.ID, &game.Player1ID, &game.Player2ID, &game.Score1, &game.Score2, &game.DateTime)
+	// Get all sets for a given game
+	var sets []Set
+
+	err := dbConn.QueryRow(`
+		SELECT g.id, g.player1_id, g.player2_id, g.datetime
+		FROM game WHERE id = $1`,
+		&game.ID).
+		Scan(&game.ID, &game.Player1ID, &game.Player2ID, &game.DateTime)
 
 	if err != nil {
 		log.Printf("Could not get game %v, err: %v", game, err)
 		return err
 	}
 
+	sets, err = game.GetSets(dbConn)
+
+	if err != nil {
+		return err
+	}
+
+	game.Sets = sets
+
 	return nil
 }
 
+// GetAll Returns all games
 func (game *Game) GetAll(dbConn *sql.DB) ([]Game, error) {
 
 	games := make([]Game, 0, 512)
-	rows, err := dbConn.Query("SELECT id, player1_id, player2_id, score1, score2, datetime FROM game")
+	rows, err := dbConn.Query("SELECT id, player1_id, player2_id, datetime FROM game")
 
 	if err != nil {
 		log.Printf("Could not fetch all games in DB. Error: %v", err)
@@ -56,21 +77,44 @@ func (game *Game) GetAll(dbConn *sql.DB) ([]Game, error) {
 
 	for rows.Next() {
 		var game Game
-		rows.Scan(&game.ID, &game.Player1ID, &game.Player2ID, &game.Score1, &game.Score2, &game.DateTime)
+		rows.Scan(&game.ID, &game.Player1ID, &game.Player2ID, &game.DateTime)
+		sets, err := game.GetSets(dbConn)
+
+		if err != nil {
+			return nil, err
+		}
+
+		game.Sets = sets
+
 		games = append(games, game)
 	}
 
 	return games, nil
 }
 
+// Update updates a given game
 func (game *Game) Update(dbConn *sql.DB) (int64, error) {
 
-	result, err := dbConn.Exec("UPDATE game SET player1_id = $1, player2_id = $2, score1 = $3, score2 = $4, datetime = $5 WHERE id = $6",
-		game.Player1ID, game.Player2ID, game.Score1, game.Score2, game.DateTime, game.ID)
+	result, err := dbConn.Exec(`
+		UPDATE game SET player1_id = $1, player2_id = $2,
+		datetime = $3 WHERE id = $4
+		4`, game.Player1ID, game.Player2ID,
+		game.DateTime, game.ID)
 
 	if err != nil {
 		log.Printf("Could not update game: %v, err: %v", game, err)
 		return 0, err
+	}
+
+	for _, set := range game.Sets {
+		result, err = dbConn.Exec(`
+			UPDATE set SET score1 = $1, score2 = $2 WHERE id = $3`,
+			set.ID)
+
+		if err != nil {
+			log.Printf("Could not update set: %v, err: %v", set, err)
+			return 0, err
+		}
 	}
 
 	rowsAffected, err := result.RowsAffected()
@@ -83,6 +127,7 @@ func (game *Game) Update(dbConn *sql.DB) (int64, error) {
 
 }
 
+// Delete deletes a game
 func (game *Game) Delete(dbConn *sql.DB) (int64, error) {
 	result, err := dbConn.Exec("DELETE FROM game WHERE id = $1",
 		game.ID)
@@ -106,4 +151,28 @@ func (game *Game) Delete(dbConn *sql.DB) (int64, error) {
 	}
 
 	return game.ID, nil
+}
+
+// GetSets returns all sets for a game
+func (game *Game) GetSets(dbConn *sql.DB) ([]Set, error) {
+
+	var sets []Set
+	var set Set
+	rows, err := dbConn.Query(`
+		SELECT id, score1, score2 FROM set
+		WHERE game_id = $1`, game.ID)
+
+	if err != nil {
+		log.Printf("Could not fetch all sets for game %v. Error: %v",
+			game, err)
+		return nil, err
+	}
+
+	for rows.Next() {
+		set.GameID = game.ID
+		rows.Scan(&set.ID, &set.Score1, &set.Score2)
+		sets = append(sets, set)
+	}
+
+	return sets, nil
 }
