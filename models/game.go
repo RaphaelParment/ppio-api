@@ -31,6 +31,21 @@ func (game *Game) Insert(dbConn *sql.DB) (int64, error) {
 		return 0, err
 	}
 
+	for _, set := range game.Sets {
+
+		_, err := dbConn.Exec(`
+		INSERT INTO set
+		(game_id, score1, score2)
+		VALUES
+		($1, $2, $3)`, id, set.Score1, set.Score2)
+
+		if err != nil {
+			log.Printf("Could not insert set %v for game %v. Error: %v\n", set, game, err)
+			return 0, err
+		}
+	}
+
+
 	log.Printf("Inserted game with ID '%d'", id)
 
 	return id, nil
@@ -43,7 +58,7 @@ func (game *Game) GetByID(dbConn *sql.DB) error {
 	var sets []Set
 
 	err := dbConn.QueryRow(`
-		SELECT g.id, g.player1_id, g.player2_id, g.datetime
+		SELECT id, player1_id, player2_id, datetime
 		FROM game WHERE id = $1`,
 		&game.ID).
 		Scan(&game.ID, &game.Player1ID, &game.Player2ID, &game.DateTime)
