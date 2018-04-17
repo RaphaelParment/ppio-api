@@ -1,3 +1,16 @@
+CREATE DATABASE ppio;
+
+USE ppio;
+
+CREATE TABLE player (
+    id INT NOT NULL DEFAULT unique_rowid(),
+    first_name STRING NULL,
+    last_name STRING NULL,
+    points INT NULL,
+    CONSTRAINT "primary" PRIMARY KEY (id ASC),
+    FAMILY "primary" (id, first_name, last_name, points)
+);
+
 CREATE TABLE game (
     id INT NOT NULL DEFAULT unique_rowid(),
     player1_id INTEGER NOT NULL,
@@ -19,13 +32,4 @@ CREATE TABLE set (
     CONSTRAINT "primary" PRIMARY KEY (id ASC),
     CONSTRAINT game_id_fk FOREIGN KEY (game_id) REFERENCES game(id),
     FAMILY "primary" (id, game_id, score1, score2)
-);
-
-CREATE TABLE player (
-    id INT NOT NULL DEFAULT unique_rowid(),
-    first_name STRING NULL,
-    last_name STRING NULL,
-    points INT NULL,
-    CONSTRAINT "primary" PRIMARY KEY (id ASC),
-    FAMILY "primary" (id, first_name, last_name, points)
 );
