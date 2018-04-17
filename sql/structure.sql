@@ -1,3 +1,5 @@
+DROP DATABASE IF EXISTS ppio CASCADE;
+
 CREATE DATABASE ppio;
 
 USE ppio;
@@ -33,3 +35,5 @@ CREATE TABLE set (
     CONSTRAINT game_id_fk FOREIGN KEY (game_id) REFERENCES game(id),
     FAMILY "primary" (id, game_id, score1, score2)
 );
+
+GRANT ALL ON ppio.* TO ppio_user;
