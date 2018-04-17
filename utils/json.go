@@ -26,6 +26,29 @@ func GetPlayers() []*models.Player {
 	return c
 }
 
+// winner 1 -> player1 wins
+// winner 2 -> player2 wins
+func generateSet(winner int) models.Set {
+
+	var player1Score int
+	var player2Score int
+
+	if winner == 1 {
+		player1Score = 11
+		player2Score = rand.Intn(10)
+	} else {
+		player2Score = 11
+		player1Score = rand.Intn(10)
+	}
+
+	set := models.Set{
+		Score1 : player1Score,
+		Score2 : player2Score,
+	}
+
+	return set
+}
+
 func GenerateGames(players []*models.Player) []models.Game {
 
 	var games []models.Game
@@ -36,25 +59,37 @@ func GenerateGames(players []*models.Player) []models.Game {
 			// generate a game
 			if homePlayer.FirstName != awayPlayer.FirstName {
 
-				// generate scores
-				homeScore := rand.Intn(20)
-				awayScore := rand.Intn(20)
+				var winner int
+				var sets []models.Set
+				var numberOfSets int
 
-				if homeScore >= awayScore {
-					if awayScore > 15 {
-						awayScore = homeScore - 2
-					} else {
-						homeScore = 11
-						awayScore = rand.Intn(9) + 1
-					}
+				if rand.Float32() > 0.5 {
+					numberOfSets = 2
 				} else {
-					if homeScore > 15 {
-						homeScore = awayScore - 2
-					} else {
-						awayScore = 11
-						homeScore = rand.Intn(9) + 1
-					}
+					numberOfSets = 3
 				}
+
+				if rand.Float32() > 0.5 {
+					winner = 1
+				} else {
+					winner = 2
+				}
+
+				for i := 0; i < numberOfSets; i++ {
+
+					var set models.Set
+
+					if numberOfSets == 2 {
+						set = generateSet(winner)
+					} else {
+						set = generateSet((winner % 2) + 1) // winner -> 1 then 2, winner 2 -> then 1
+						winner++
+					}
+
+					sets = append(sets, set)
+				}
+
+
 
 				// generate random datetime (1 month span)
 				day := rand.Intn(28) + 1
@@ -71,6 +106,7 @@ func GenerateGames(players []*models.Player) []models.Game {
 					DateTime:  objDatetime,
 					Player1ID: homePlayer.ID,
 					Player2ID: awayPlayer.ID,
+					Sets: sets,
 				}
 
 				games = append(games, game)
