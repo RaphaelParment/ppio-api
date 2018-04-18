@@ -9,11 +9,14 @@ import (
 
 // Game structure
 type Game struct {
-	ID        int64     `json:"id,omitempty"`
-	DateTime  time.Time `json:"datetime,omitempty"`
-	Player1ID int64     `json:"player1Id"`
-	Player2ID int64     `json:"player2Id"`
-	Sets      []Set     `json:"sets"`
+	ID         int64     `json:"id,omitempty"`
+	DateTime   time.Time `json:"datetime,omitempty"`
+	Player1ID  int64     `json:"player1Id"`
+	Player2ID  int64     `json:"player2Id"`
+	WinnerID   int64     `json:"winnerId"`
+	Validated  bool      `json:"validated"`
+	EditedByID int64     `json:"editedById"`
+	Sets       []Set     `json:"sets"`
 }
 
 // Insert game
@@ -22,9 +25,10 @@ func (game *Game) Insert(dbConn *sql.DB) (int64, error) {
 	var id int64
 	err := dbConn.QueryRow(`
 		INSERT INTO game 
-		(player1_id, player2_id, datetime)
-		VALUES($1, $2, $3) RETURNING id`,
-		game.Player1ID, game.Player2ID, game.DateTime).Scan(&id)
+		(player1_id, player2_id, winner_id, validated, edited_by_id, datetime)
+		VALUES($1, $2, $3, $4, $5, $6) RETURNING id`,
+		game.Player1ID, game.Player2ID, game.WinnerID,
+		game.Validated, game.EditedByID, game.DateTime).Scan(&id)
 
 	if err != nil {
 		log.Printf("Could not insert game %v. Error: %v\n", game, err)
@@ -45,7 +49,6 @@ func (game *Game) Insert(dbConn *sql.DB) (int64, error) {
 		}
 	}
 
-
 	log.Printf("Inserted game with ID '%d'", id)
 
 	return id, nil
@@ -58,10 +61,12 @@ func (game *Game) GetByID(dbConn *sql.DB) error {
 	var sets []Set
 
 	err := dbConn.QueryRow(`
-		SELECT id, player1_id, player2_id, datetime
-		FROM game WHERE id = $1`,
+		SELECT id, player1_id, player2_id, winner_id, validated,
+		edited_by_id, datetime FROM game WHERE id = $1`,
 		&game.ID).
-		Scan(&game.ID, &game.Player1ID, &game.Player2ID, &game.DateTime)
+		Scan(&game.ID, &game.Player1ID, &game.Player2ID,
+			&game.WinnerID, &game.Validated, &game.EditedByID,
+			&game.DateTime)
 
 	if err != nil {
 		log.Printf("Could not get game %v, err: %v", game, err)
@@ -83,7 +88,9 @@ func (game *Game) GetByID(dbConn *sql.DB) error {
 func (game *Game) GetAll(dbConn *sql.DB) ([]Game, error) {
 
 	games := make([]Game, 0, 512)
-	rows, err := dbConn.Query("SELECT id, player1_id, player2_id, datetime FROM game")
+	rows, err := dbConn.Query(`
+		  SELECT id, player1_id, player2_id, winner_id, validated,
+		edited_by_id, datetime FROM game`)
 
 	if err != nil {
 		log.Printf("Could not fetch all games in DB. Error: %v", err)
@@ -92,7 +99,9 @@ func (game *Game) GetAll(dbConn *sql.DB) ([]Game, error) {
 
 	for rows.Next() {
 		var game Game
-		rows.Scan(&game.ID, &game.Player1ID, &game.Player2ID, &game.DateTime)
+		rows.Scan(&game.ID, &game.Player1ID, &game.Player2ID,
+			&game.WinnerID, &game.Validated, &game.EditedByID,
+			&game.DateTime)
 		sets, err := game.GetSets(dbConn)
 
 		if err != nil {
@@ -111,10 +120,10 @@ func (game *Game) GetAll(dbConn *sql.DB) ([]Game, error) {
 func (game *Game) Update(dbConn *sql.DB) (int64, error) {
 
 	result, err := dbConn.Exec(`
-		UPDATE game SET player1_id = $1, player2_id = $2,
-		datetime = $3 WHERE id = $4
-		4`, game.Player1ID, game.Player2ID,
-		game.DateTime, game.ID)
+		UPDATE game SET player1_id = $1, player2_id = $2, winner_id = $3,
+		validated = $4, edited_by_id = $5, datetime = $6 WHERE id = $7`,
+			game.Player1ID, game.Player2ID, game.WinnerID, game.Validated,
+			game.EditedByID, game.DateTime, game.ID)
 
 	if err != nil {
 		log.Printf("Could not update game: %v, err: %v", game, err)
@@ -124,7 +133,7 @@ func (game *Game) Update(dbConn *sql.DB) (int64, error) {
 	for _, set := range game.Sets {
 		result, err = dbConn.Exec(`
 			UPDATE set SET score1 = $1, score2 = $2 WHERE id = $3`,
-			set.ID)
+			set.Score1, set.Score2, set.ID)
 
 		if err != nil {
 			log.Printf("Could not update set: %v, err: %v", set, err)
@@ -144,6 +153,7 @@ func (game *Game) Update(dbConn *sql.DB) (int64, error) {
 
 // Delete deletes a game
 func (game *Game) Delete(dbConn *sql.DB) (int64, error) {
+
 	result, err := dbConn.Exec("DELETE FROM game WHERE id = $1",
 		game.ID)
 
