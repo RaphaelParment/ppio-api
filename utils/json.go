@@ -42,8 +42,8 @@ func generateSet(winner int) models.Set {
 	}
 
 	set := models.Set{
-		Score1 : player1Score,
-		Score2 : player2Score,
+		Score1: player1Score,
+		Score2: player2Score,
 	}
 
 	return set
@@ -52,6 +52,7 @@ func generateSet(winner int) models.Set {
 func GenerateGames(players []*models.Player) []models.Game {
 
 	var games []models.Game
+	validated := false
 
 	for _, homePlayer := range players {
 		for _, awayPlayer := range players {
@@ -60,19 +61,25 @@ func GenerateGames(players []*models.Player) []models.Game {
 			if homePlayer.FirstName != awayPlayer.FirstName {
 
 				var winner int
+				var winnerID int64
+				var editedByID int64
 				var sets []models.Set
 				var numberOfSets int
 
 				if rand.Float32() > 0.5 {
 					numberOfSets = 2
+					editedByID = homePlayer.ID
 				} else {
 					numberOfSets = 3
+					editedByID = awayPlayer.ID
 				}
 
 				if rand.Float32() > 0.5 {
 					winner = 1
+					winnerID = homePlayer.ID
 				} else {
 					winner = 2
+					winnerID = awayPlayer.ID
 				}
 
 				for i := 0; i < numberOfSets; i++ {
@@ -89,8 +96,6 @@ func GenerateGames(players []*models.Player) []models.Game {
 					sets = append(sets, set)
 				}
 
-
-
 				// generate random datetime (1 month span)
 				day := rand.Intn(28) + 1
 				hour := rand.Intn(24)
@@ -103,10 +108,19 @@ func GenerateGames(players []*models.Player) []models.Game {
 					log.Fatalf("Could not parse date time %s. Error: %v\n", datetime, err)
 				}
 				game := models.Game{
-					DateTime:  objDatetime,
-					Player1ID: homePlayer.ID,
-					Player2ID: awayPlayer.ID,
-					Sets: sets,
+					DateTime:   objDatetime,
+					Player1ID:  homePlayer.ID,
+					Player2ID:  awayPlayer.ID,
+					WinnerID:   winnerID,
+					Validated:  validated,
+					EditedByID: editedByID,
+					Sets:       sets,
+				}
+
+				if !validated {
+					validated = true
+				} else {
+					validated = false
 				}
 
 				games = append(games, game)
