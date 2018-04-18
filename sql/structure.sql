@@ -36,4 +36,5 @@ CREATE TABLE set (
     FAMILY "primary" (id, game_id, score1, score2)
 );
 
+CREATE USER IF NOT EXISTS ppio_user;
 GRANT ALL ON ppio.* TO ppio_user;
