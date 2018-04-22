@@ -87,20 +87,27 @@ func (game *Game) GetByID(dbConn *sql.DB) error {
 	return nil
 }
 
-// GetAll Returns all games
-func (game *Game) GetAll(dbConn *sql.DB) ([]Game, error) {
+// GetAll Returns all games and the total count.
+func (game *Game) GetAll(dbConn *sql.DB) ([]Game, int64, error) {
 
+	var countRows int64
 	games := make([]Game, 0, 512)
-	rows, err := dbConn.Query(`
-		SELECT id, player1_id, player2_id, winner_id, validation_state,
-		edited_by_id, datetime
-		FROM game`)
 
-	if err != nil {
-		log.Printf("Could not fetch all games in DB. Error: %v\n", err)
-		return nil, err
+	row := dbConn.QueryRow("SELECT COUNT(0) FROM game")
+	if row == nil {
+		log.Printf("Could not fetch the count of games")
+		return nil, 0, errors.New("Count of games not be fetched")
+	}
+	if err := row.Scan(&countRows); err != nil {
+		log.Printf("Could not scan the count of games from database. Error: %v", err)
+		return nil, 0, err
 	}
 
+	rows, err := dbConn.Query("SELECT id, player1_id, player2_id, datetime FROM game LIMIT ?", defaultThreshold)
+	if err != nil {
+		log.Printf("Could not fetch all games in DB. Error: %v", err)
+		return nil, 0, err
+	}
 	for rows.Next() {
 		var game Game
 		rows.Scan(&game.ID, &game.Player1ID, &game.Player2ID,
@@ -109,7 +116,7 @@ func (game *Game) GetAll(dbConn *sql.DB) ([]Game, error) {
 		sets, err := game.GetSets(dbConn)
 
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		game.Sets = sets
@@ -117,9 +124,7 @@ func (game *Game) GetAll(dbConn *sql.DB) ([]Game, error) {
 		games = append(games, game)
 	}
 
-	log.Print("Successfully fetched all games\n")
-
-	return games, nil
+	return games, countRows, nil
 }
 
 // Update updates a given game

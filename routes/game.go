@@ -8,8 +8,15 @@ import (
 	"net/http"
 	"ppio/models"
 	"strconv"
+
 	"github.com/gorilla/mux"
 )
+
+// GamesResponse Type used to return the amount of rows and the items (limited by default)
+type GamesResponse struct {
+	Count int64         `json:"count"`
+	Items []models.Game `json:"items"`
+}
 
 func getGameHandler(dbConn *sql.DB) http.HandlerFunc {
 
@@ -49,15 +56,18 @@ func getGamesHandler(dbConn *sql.DB) http.HandlerFunc {
 	fn := func(w http.ResponseWriter, req *http.Request) {
 
 		var game models.Game
-		games, err := game.GetAll(dbConn)
-
+		games, countRow, err := game.GetAll(dbConn)
 		if err != nil {
 			log.Printf("Could not get games. Error: %v", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		gameResponse := &GamesResponse{
+			Count: countRow,
+			Items: games,
+		}
 
-		gamesJSON, err := json.Marshal(games)
+		gamesJSON, err := json.Marshal(gameResponse)
 
 		if err != nil {
 			log.Fatalf("Could not parse games to JSON, err: %v", err)
