@@ -86,6 +86,12 @@ func getAllPlayersHandler(dbConn *sql.DB) http.HandlerFunc {
 
 	fn := func(w http.ResponseWriter, req *http.Request) {
 
+		vars := mux.Vars(r)
+		firstName, ok := vars["firstName"]
+		queryBld := new(models.PPIOQuery)
+		if ok {
+
+		}
 		var player models.Player
 		players, err := player.GetAll(dbConn)
 
