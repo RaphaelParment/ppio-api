@@ -52,7 +52,7 @@ func generateSet(winner int) models.Set {
 func GenerateGames(players []*models.Player) []models.Game {
 
 	var games []models.Game
-	validated := false
+	validationState := 0
 
 	for _, homePlayer := range players {
 		for _, awayPlayer := range players {
@@ -108,19 +108,19 @@ func GenerateGames(players []*models.Player) []models.Game {
 					log.Fatalf("Could not parse date time %s. Error: %v\n", datetime, err)
 				}
 				game := models.Game{
-					DateTime:   objDatetime,
-					Player1ID:  homePlayer.ID,
-					Player2ID:  awayPlayer.ID,
-					WinnerID:   winnerID,
-					Validated:  validated,
-					EditedByID: editedByID,
-					Sets:       sets,
+					DateTime:        objDatetime,
+					Player1ID:       homePlayer.ID,
+					Player2ID:       awayPlayer.ID,
+					WinnerID:        winnerID,
+					ValidationState: validationState,
+					EditedByID:      editedByID,
+					Sets:            sets,
 				}
 
-				if !validated {
-					validated = true
+				if validationState == 2 {
+					validationState = 0
 				} else {
-					validated = false
+					validationState = 2
 				}
 
 				games = append(games, game)
