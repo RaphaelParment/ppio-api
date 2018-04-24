@@ -54,6 +54,24 @@ func addPlayerHandler(dbConn *sql.DB) http.HandlerFunc {
 	fn := func(w http.ResponseWriter, req *http.Request) {
 
 		var player models.Player
+
+		reqBody, err := ioutil.ReadAll(req.Body)
+
+		if err != nil {
+			log.Print("Could not read request body while adding player\n")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = json.Unmarshal(reqBody, &player)
+
+		// Making sure request body is well formatted
+		if err != nil {
+			log.Print("Request body does not match player structure\n")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		if _, err := player.Insert(dbConn); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		} else {
