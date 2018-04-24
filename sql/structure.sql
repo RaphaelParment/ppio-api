@@ -19,7 +19,7 @@ CREATE TABLE game (
     player2_id INTEGER NOT NULL,
     winner_id INTEGER NOT NULL,
     datetime TIMESTAMP WITH TIME ZONE NULL,
-    validated BOOL NOT NULL DEFAULT false,
+    validation_state INTEGER NOT NULL DEFAULT 0,
     edited_by_id INTEGER NOT NULL,
     CONSTRAINT "primary" PRIMARY KEY (id ASC),
     CONSTRAINT player1_fk FOREIGN KEY (player1_id) REFERENCES player (id),
