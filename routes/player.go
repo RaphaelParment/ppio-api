@@ -6,11 +6,43 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"ppio/models"
 	"strconv"
 
 	"github.com/gorilla/mux"
 )
+
+// CountResponse Type used to return the amount of rows and the items (limited by default)
+type CountResponse struct {
+	Count int64           `json:"count"`
+	Items []models.Player `json:"items"`
+}
+
+func parsePlayerParameters(vars url.Values) (map[string]interface{}, error) {
+	filters := make(map[string]interface{})
+
+	playerFirstName := vars.Get("firstName")
+	if playerFirstName != "" {
+		filters["firstName"] = playerFirstName
+	}
+	playerLastName := vars.Get("lastName")
+	if playerLastName != "" {
+		filters["lastName"] = playerLastName
+	}
+
+	points := vars.Get("points")
+	if points != "" {
+		pointsNr, err := strconv.Atoi(points)
+		if err != nil {
+			log.Printf("Could not parse the value of the points. Err : %v", err)
+		} else {
+			filters["points"] = pointsNr
+		}
+	}
+
+	return filters, nil
+}
 
 func getPlayerHandler(dbConn *sql.DB) http.HandlerFunc {
 
@@ -86,16 +118,30 @@ func getAllPlayersHandler(dbConn *sql.DB) http.HandlerFunc {
 
 	fn := func(w http.ResponseWriter, req *http.Request) {
 
-		var player models.Player
-		players, err := player.GetAll(dbConn)
+		vars := req.URL.Query()
+		filters, err := parsePlayerParameters(vars)
+		if err != nil {
+			log.Printf("Could not parse the game query parameters")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
+		limit, offset := parseLimitAndOffset(vars)
+		filters["limit"] = limit
+		filters["offset"] = offset
+
+		var player models.Player
+		players, countRow, err := player.GetAll(dbConn, filters)
 		if err != nil {
 			log.Printf("Could not get players. Error: %v", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
-		playerJSON, err := json.Marshal(players)
+		playersResponse := &CountResponse{
+			Count: countRow,
+			Items: players,
+		}
+		playerJSON, err := json.Marshal(playersResponse)
 
 		if err != nil {
 			log.Printf("Could not marshal players: %v, err: %v",
