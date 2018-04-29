@@ -5,6 +5,7 @@ import (
 	"log"
 )
 
+// Player Model of the player as stored in the database.
 type Player struct {
 	ID        int64  `json:"id"`
 	FirstName string `json:"firstName"`

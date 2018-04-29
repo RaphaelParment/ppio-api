@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 )
 
-const gameTable = "game"
+const gameTable = "game g"
 
 // Game structure
 type Game struct {
@@ -36,11 +37,12 @@ func prepareGameQuery() bytes.Buffer {
 	return queryBlder
 }
 
-func prepareGameWhereClause(filter map[string]interface{}, queryBld *bytes.Buffer, params *[]interface{}) error {
+func prepareGameWhereClause(filter map[string]interface{}, queryBld *bytes.Buffer, params *[]interface{}, isCount bool) error {
+	placeHolderCnt := 1
 	playerFilter, ok := filter["playerFirstName"]
 	playerClause := ok
 	if ok {
-		queryBld.WriteString(" g JOIN player p ON g.player1_id = p1.id, JOIN player p2 ON g.player2_id = p2.id")
+		queryBld.WriteString(" JOIN player p1 ON g.player1_id = p1.id JOIN player p2 ON g.player2_id = p2.id")
 	}
 	queryBld.WriteString(" WHERE 1=1 ")
 	validatedFilter, ok := filter["validated"]
@@ -49,19 +51,23 @@ func prepareGameWhereClause(filter map[string]interface{}, queryBld *bytes.Buffe
 		if validatedFilter.(bool) {
 			validatedValue = 1
 		}
-		queryBld.WriteString(" AND validation_state = ?")
+		queryBld.WriteString(fmt.Sprintf(" AND validation_state = $%d", placeHolderCnt))
+		placeHolderCnt = placeHolderCnt + 1
 		*params = append(*params, validatedValue)
 	}
 
 	if playerClause {
-		queryBld.WriteString(" AND (p2.first_name = ? OR p1.first_name = ?)")
+		queryBld.WriteString(fmt.Sprintf(" AND (p2.first_name = $%d OR p1.first_name = $%d)", placeHolderCnt, placeHolderCnt+1))
+		placeHolderCnt = placeHolderCnt + 2
 		*params = append(*params, playerFilter)
 		*params = append(*params, playerFilter)
 	}
 
-	queryBld.WriteString(" LIMIT ? OFFSET ?")
-	*params = append(*params, filter["limit"].(int))
-	*params = append(*params, filter["offset"].(int))
+	if !isCount {
+		queryBld.WriteString(fmt.Sprintf(" LIMIT $%d OFFSET $%d", placeHolderCnt, placeHolderCnt+1))
+		*params = append(*params, filter["limit"].(int))
+		*params = append(*params, filter["offset"].(int))
+	}
 
 	return nil
 }
@@ -142,7 +148,7 @@ func (game *Game) GetAll(dbConn *sql.DB, filters map[string]interface{}) ([]Game
 	params := make([]interface{}, 0, 8)
 
 	queryBlder := prepareGameCountQuery()
-	err := prepareGameWhereClause(filters, &queryBlder, &params)
+	err := prepareGameWhereClause(filters, &queryBlder, &params, true)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -159,7 +165,7 @@ func (game *Game) GetAll(dbConn *sql.DB, filters map[string]interface{}) ([]Game
 
 	queryBlder = prepareGameQuery()
 	params = make([]interface{}, 0, 8)
-	err = prepareGameWhereClause(filters, &queryBlder, &params)
+	err = prepareGameWhereClause(filters, &queryBlder, &params, false)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -181,7 +187,6 @@ func (game *Game) GetAll(dbConn *sql.DB, filters map[string]interface{}) ([]Game
 		}
 
 		game.Sets = sets
-
 		games = append(games, game)
 	}
 

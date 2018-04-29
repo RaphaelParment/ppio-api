@@ -4,33 +4,31 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"net/url"
 	"ppio/models"
 	"strconv"
 
 	"github.com/gorilla/mux"
 )
 
-func parseLimitAndOffset(vars map[string]string) (int, int) {
-	limit, ok := vars["limit"]
-	var limitNr, offsetNr int
+func parseLimitAndOffset(vars url.Values) (int, int) {
+	limit := vars.Get("limit")
+	limitNr := models.DefaultLimit
+	offsetNr := models.DefaultOffset
 	var err error
-	if ok {
+	if limit != "" {
 		limitNr, err = strconv.Atoi(limit)
 		if err != nil {
 			log.Printf("Could not parse the value of limit paramter. Err: %v", err)
 			limitNr = models.DefaultLimit
-		} else {
-			limitNr = models.DefaultLimit
 		}
+	}
 
-		offset, ok := vars["offset"]
-		if ok {
-			offsetNr, err = strconv.Atoi(offset)
-			if err != nil {
-				log.Printf("Could not parse the value of offset parameter. Err: %v", err)
-				offsetNr = models.DefaultOffset
-			}
-		} else {
+	offset := vars.Get("offset")
+	if offset != "" {
+		offsetNr, err = strconv.Atoi(offset)
+		if err != nil {
+			log.Printf("Could not parse the value of offset parameter. Err: %v", err)
 			offsetNr = models.DefaultOffset
 		}
 	}

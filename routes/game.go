@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"ppio/models"
 	"strconv"
 
@@ -18,16 +19,16 @@ type GamesResponse struct {
 	Items []models.Game `json:"items"`
 }
 
-func parseGameParameters(vars map[string]string) (map[string]interface{}, error) {
+func parseGameParameters(vars url.Values) (map[string]interface{}, error) {
 	filters := make(map[string]interface{})
 
-	playerFirstName, ok := vars["playerFirstName"]
-	if ok {
+	playerFirstName := vars.Get("playerFirstName")
+	if playerFirstName != "" {
 		filters["playerFirstName"] = playerFirstName
 	}
 
-	gameValidated, ok := vars["validated"]
-	if ok {
+	gameValidated := vars.Get("validated")
+	if gameValidated != "" {
 		validated, err := strconv.ParseBool(gameValidated)
 		if err != nil {
 			log.Printf("Could not parse the value of validated parameter. Err: %v", err)
@@ -76,7 +77,7 @@ func getGamesHandler(dbConn *sql.DB) http.HandlerFunc {
 
 	fn := func(w http.ResponseWriter, req *http.Request) {
 
-		vars := mux.Vars(req)
+		vars := req.URL.Query()
 		filters, err := parseGameParameters(vars)
 		if err != nil {
 			log.Printf("Could not parse the game query parameters")
