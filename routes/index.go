@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func parseOffsetAndLimit(vars map[string]string) (int, int) {
+func parseLimitAndOffset(vars map[string]string) (int, int) {
 	limit, ok := vars["limit"]
 	var limitNr, offsetNr int
 	var err error
