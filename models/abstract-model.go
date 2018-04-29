@@ -8,6 +8,9 @@ import (
 	"log"
 )
 
+const DefaultLimit = 20
+const DefaultOffset = 0
+
 type IDbObject interface {
 	Insert(dbConn *sql.DB) int64
 	GetByID(dbConn *sql.DB) error
@@ -18,7 +21,7 @@ type Query interface {
 	From(tableName string)
 	Join(tableName string, jointColumnOrig string, jointColumnDest string)
 	Where(columnName string, value interface{})
-	ToSql() (string, error)
+	ToSQL() (string, error)
 }
 
 type JointTable struct {
@@ -65,7 +68,7 @@ func (ppioQ *PPIOQuery) Where(columnName string, value interface{}) {
 	ppioQ.WhereClauses = append(ppioQ.WhereClauses, newWhereClause)
 }
 
-func (ppioQ *PPIOQuery) ToSql() (string, error) {
+func (ppioQ *PPIOQuery) ToSQL() (string, error) {
 	var queryBlder bytes.Buffer
 	var queryFinal string
 	if _, err := queryBlder.WriteString("SELECT "); err != nil {
