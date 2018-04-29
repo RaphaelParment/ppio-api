@@ -18,6 +18,27 @@ type GamesResponse struct {
 	Items []models.Game `json:"items"`
 }
 
+func parseGameParameters(vars map[string]string) (map[string]interface{}, error) {
+	filters := make(map[string]interface{})
+
+	playerFirstName, ok := vars["playerFirstName"]
+	if ok {
+		filters["playerFirstName"] = playerFirstName
+	}
+
+	gameValidated, ok := vars["validated"]
+	if ok {
+		validated, err := strconv.ParseBool(gameValidated)
+		if err != nil {
+			log.Printf("Could not parse the value of validated parameter. Err: %v", err)
+		} else {
+			filters["validated"] = validated
+		}
+	}
+
+	return filters, nil
+}
+
 func getGameHandler(dbConn *sql.DB) http.HandlerFunc {
 
 	fn := func(w http.ResponseWriter, req *http.Request) {
@@ -55,8 +76,20 @@ func getGamesHandler(dbConn *sql.DB) http.HandlerFunc {
 
 	fn := func(w http.ResponseWriter, req *http.Request) {
 
+		vars := mux.Vars(req)
+		filters, err := parseGameParameters(vars)
+		if err != nil {
+			log.Printf("Could not parse the game query parameters")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		limit, offset := parseLimitAndOffset(vars)
+		filters["limit"] = limit
+		filters["offset"] = offset
+
 		var game models.Game
-		games, countRow, err := game.GetAll(dbConn)
+		games, countRow, err := game.GetAll(dbConn, filters)
 		if err != nil {
 			log.Printf("Could not get games. Error: %v", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
