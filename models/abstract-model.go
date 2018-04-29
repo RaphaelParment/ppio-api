@@ -8,9 +8,6 @@ import (
 	"log"
 )
 
-const DefaultLimit = 20
-const DefaultOffset = 0
-
 type IDbObject interface {
 	Insert(dbConn *sql.DB) int64
 	GetByID(dbConn *sql.DB) error

@@ -20,7 +20,7 @@ func (player *Player) Insert(dbConn *sql.DB) (int64, error) {
 	err := dbConn.QueryRow(`
 		INSERT INTO player (first_name, last_name, points)
 		VALUES ($1,$2,$3) RETURNING id`,
-			player.FirstName, player.LastName, player.Points).Scan(&id)
+		player.FirstName, player.LastName, player.Points).Scan(&id)
 
 	if err != nil {
 		log.Printf("Could not create a new player %v. Error: %v\n", player, err)
@@ -36,11 +36,11 @@ func (player *Player) Insert(dbConn *sql.DB) (int64, error) {
 func (player *Player) GetByID(dbConn *sql.DB) error {
 
 	err := dbConn.QueryRow(`
-		SELECT id, first_name, last_name, points 
+		SELECT id, first_name, last_name, points
 		FROM player
 		WHERE id = $1`,
 		&player.ID).Scan(&player.ID, &player.FirstName,
-			&player.LastName, &player.Points)
+		&player.LastName, &player.Points)
 
 	if err != nil {
 		log.Printf("Could not get player %v, err: %v\n", player, err)
@@ -79,7 +79,7 @@ func (player *Player) GetAll(dbConn *sql.DB) ([]Player, error) {
 func (player *Player) Update(dbConn *sql.DB) (int64, error) {
 
 	result, err := dbConn.Exec(`
-		UPDATE player 
+		UPDATE player
 		SET first_name = $1, last_name = $2, points = $3
 		WHERE id = $4`,
 		player.FirstName, player.LastName, player.Points, player.ID)

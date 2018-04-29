@@ -1,11 +1,14 @@
 package models
 
 import (
+	"bytes"
 	"database/sql"
 	"errors"
 	"log"
 	"time"
 )
+
+const gameTable = "game"
 
 // Game structure
 type Game struct {
@@ -17,6 +20,50 @@ type Game struct {
 	ValidationState int       `json:"validationState"`
 	EditedByID      int64     `json:"editedById"`
 	Sets            []Set     `json:"sets"`
+}
+
+func prepareGameCountQuery() bytes.Buffer {
+	var queryBlder bytes.Buffer
+	queryBlder.WriteString(startQueryCount)
+	queryBlder.WriteString(gameTable)
+	return queryBlder
+}
+
+func prepareGameQuery() bytes.Buffer {
+	var queryBlder bytes.Buffer
+	queryBlder.WriteString(startGameQuery)
+	queryBlder.WriteString(gameTable)
+	return queryBlder
+}
+
+func prepareGameWhereClause(filter map[string]interface{}, queryBld *bytes.Buffer, params *[]interface{}) error {
+	playerFilter, ok := filter["playerFirstName"]
+	playerClause := ok
+	if ok {
+		queryBld.WriteString(" g JOIN player p ON g.player1_id = p1.id, JOIN player p2 ON g.player2_id = p2.id")
+	}
+	queryBld.WriteString(" WHERE 1=1 ")
+	validatedFilter, ok := filter["validated"]
+	if ok {
+		validatedValue := 0
+		if validatedFilter.(bool) {
+			validatedValue = 1
+		}
+		queryBld.WriteString(" AND validation_state = ?")
+		*params = append(*params, validatedValue)
+	}
+
+	if playerClause {
+		queryBld.WriteString(" AND (p2.first_name = ? OR p1.first_name = ?)")
+		*params = append(*params, playerFilter)
+		*params = append(*params, playerFilter)
+	}
+
+	queryBld.WriteString(" LIMIT ? OFFSET ?")
+	*params = append(*params, filter["limit"].(int))
+	*params = append(*params, filter["offset"].(int))
+
+	return nil
 }
 
 // Insert game
@@ -66,8 +113,8 @@ func (game *Game) GetByID(dbConn *sql.DB) error {
 		WHERE id = $1`,
 		&game.ID).
 		Scan(&game.ID, &game.Player1ID, &game.Player2ID,
-		&game.WinnerID, &game.ValidationState, &game.EditedByID,
-		&game.DateTime)
+			&game.WinnerID, &game.ValidationState, &game.EditedByID,
+			&game.DateTime)
 
 	if err != nil {
 		log.Printf("Could not get game %v, err: %v\n", game, err)
@@ -88,12 +135,19 @@ func (game *Game) GetByID(dbConn *sql.DB) error {
 }
 
 // GetAll Returns all games and the total count.
-func (game *Game) GetAll(dbConn *sql.DB) ([]Game, int64, error) {
+func (game *Game) GetAll(dbConn *sql.DB, filters map[string]interface{}) ([]Game, int64, error) {
 
 	var countRows int64
 	games := make([]Game, 0, 512)
+	params := make([]interface{}, 0, 8)
 
-	row := dbConn.QueryRow("SELECT COUNT(0) FROM game")
+	queryBlder := prepareGameCountQuery()
+	err := prepareGameWhereClause(filters, &queryBlder, &params)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	row := dbConn.QueryRow(queryBlder.String(), params...)
 	if row == nil {
 		log.Printf("Could not fetch the count of games")
 		return nil, 0, errors.New("Count of games not be fetched")
@@ -103,7 +157,14 @@ func (game *Game) GetAll(dbConn *sql.DB) ([]Game, int64, error) {
 		return nil, 0, err
 	}
 
-	rows, err := dbConn.Query("SELECT id, player1_id, player2_id, datetime FROM game LIMIT ?", defaultThreshold)
+	queryBlder = prepareGameQuery()
+	params = make([]interface{}, 0, 8)
+	err = prepareGameWhereClause(filters, &queryBlder, &params)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := dbConn.Query(queryBlder.String(), params...)
 	if err != nil {
 		log.Printf("Could not fetch all games in DB. Error: %v", err)
 		return nil, 0, err
@@ -168,7 +229,7 @@ func (game *Game) Update(dbConn *sql.DB) (int64, error) {
 // Delete deletes a game
 func (game *Game) Delete(dbConn *sql.DB) (int64, error) {
 
-	result, err := dbConn.Exec( `
+	result, err := dbConn.Exec(`
 		DELETE FROM game
 		WHERE id = $1`, game.ID)
 
