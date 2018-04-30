@@ -7,10 +7,10 @@ import (
 
 // Set structure
 type Set struct {
-	ID     int64 `json:"id,omitempty"`
-	GameID int64 `json:"gameId,omitempty"`
-	Score1 int   `json:"score1"`
-	Score2 int   `json:"score2"`
+	ID     string `json:"id,omitempty"`
+	GameID string `json:"gameId,omitempty"`
+	Score1 int    `json:"score1"`
+	Score2 int    `json:"score2"`
 }
 
 // Insert function

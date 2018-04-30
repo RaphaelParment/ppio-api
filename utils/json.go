@@ -61,8 +61,8 @@ func GenerateGames(players []*models.Player) []models.Game {
 			if homePlayer.FirstName != awayPlayer.FirstName {
 
 				var winner int
-				var winnerID int64
-				var editedByID int64
+				var winnerID string
+				var editedByID string
 				var sets []models.Set
 				var numberOfSets int
 
@@ -117,10 +117,10 @@ func GenerateGames(players []*models.Player) []models.Game {
 					Sets:            sets,
 				}
 
-				if validationState == 2 {
+				if validationState == 1 {
 					validationState = 0
 				} else {
-					validationState = 2
+					validationState = 1
 				}
 
 				games = append(games, game)

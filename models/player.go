@@ -12,7 +12,7 @@ const playerTable = "player p"
 
 // Player Model of the player as stored in the database.
 type Player struct {
-	ID        int64  `json:"id"`
+	ID        string  `json:"id"`
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
 	Points    int    `json:"points"`
@@ -66,9 +66,9 @@ func preparePlayerWhereClause(filter map[string]interface{}, queryBld *bytes.Buf
 }
 
 // Insert Add a new player in db.
-func (player *Player) Insert(dbConn *sql.DB) (int64, error) {
+func (player *Player) Insert(dbConn *sql.DB) (string, error) {
 
-	var id int64
+	var id string
 
 	err := dbConn.QueryRow(`
 		INSERT INTO player (first_name, last_name, points)
@@ -77,7 +77,7 @@ func (player *Player) Insert(dbConn *sql.DB) (int64, error) {
 
 	if err != nil {
 		log.Printf("Could not create a new player %v. Error: %v\n", player, err)
-		return 0, err
+		return "", err
 	}
 
 	log.Printf("Inserted player %v\n", player)

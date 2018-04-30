@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"ppio/models"
-	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -46,15 +45,11 @@ func getGameHandler(dbConn *sql.DB) http.HandlerFunc {
 
 		var game models.Game
 		vars := mux.Vars(req)
-		gameID, err := strconv.Atoi(vars["gameID"])
+		gameID := vars["gameID"]
 
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
 
-		game.ID = int64(gameID)
-		err = game.GetByID(dbConn)
+		game.ID = gameID
+		err := game.GetByID(dbConn)
 
 		if err != nil {
 			log.Fatalf("Could not get game %v, err: %v", game, err)
@@ -158,7 +153,7 @@ func updateGameHandler(dbConn *sql.DB) http.HandlerFunc {
 		reqBody, err := ioutil.ReadAll(req.Body)
 
 		vars := mux.Vars(req)
-		gameID, err := strconv.ParseInt(vars["gameID"], 10, 64)
+		gameID := vars["gameID"]
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -200,13 +195,7 @@ func deleteGameHandler(dbConn *sql.DB) http.HandlerFunc {
 
 		var game models.Game
 		vars := mux.Vars(req)
-		gameID, err := strconv.ParseInt(vars["gameID"], 10, 64)
-
-		if err != nil {
-			log.Printf("Supplied ID is not numberocal")
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
+		gameID := vars["gameID"]
 
 		game.ID = gameID
 		game.GetByID(dbConn)
