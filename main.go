@@ -59,6 +59,8 @@ func main() {
 
 	if *initDbData {
 		fillDb(dbConn)
+		log.Printf("Initialised the database with dummy data. Terminating...")
+		os.Exit(0)
 	}
 
 	// Handle the routes with gorillamux
