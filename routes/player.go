@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"ppio/models"
+	"strconv"
+
 	"github.com/gorilla/mux"
 )
 
@@ -144,11 +146,16 @@ func addPlayerHandler(dbConn *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		if _, err := player.Insert(dbConn); err != nil {
+		if err := player.Insert(dbConn); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			w.WriteHeader(http.StatusOK)
+			return
 		}
+		playerJSON, err := json.Marshal(player)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Write(playerJSON)
 	}
 
 	return http.HandlerFunc(fn)

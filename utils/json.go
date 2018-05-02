@@ -23,6 +23,12 @@ func GetPlayers() []*models.Player {
 	if err != nil {
 		log.Fatalf("Error occured when unmarshalling the dummy players. Error :%v", err)
 	}
+
+	for _, player := range(c) {
+		player.Email = fmt.Sprintf("%s.%s@brol.com",
+			player.FirstName, player.LastName)
+	}
+
 	return c
 }
 

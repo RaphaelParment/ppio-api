@@ -8,6 +8,7 @@ CREATE TABLE player (
     id UUID NOT NULL DEFAULT gen_random_uuid(),
     first_name STRING NULL,
     last_name STRING NULL,
+    email STRING NULL,
     points INT NULL,
     CONSTRAINT "primary" PRIMARY KEY (id ASC),
     FAMILY "primary" (id, first_name, last_name, points)

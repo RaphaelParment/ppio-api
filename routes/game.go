@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"ppio/models"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -46,7 +47,6 @@ func getGameHandler(dbConn *sql.DB) http.HandlerFunc {
 		var game models.Game
 		vars := mux.Vars(req)
 		gameID := vars["gameID"]
-
 
 		game.ID = gameID
 		err := game.GetByID(dbConn)
@@ -164,7 +164,7 @@ func updateGameHandler(dbConn *sql.DB) http.HandlerFunc {
 
 		// TODO check why this fails.
 		if gameID != game.ID {
-			log.Printf("Supplied game.ID: %d in request body does not match query param gameID: %d",
+			log.Printf("Supplied game.ID: %s in request body does not match query param gameID: %s",
 				game.ID, gameID)
 			http.Error(w, "Supplied game.ID in request body does not match query param gameID",
 				http.StatusInternalServerError)
