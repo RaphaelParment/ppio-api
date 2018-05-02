@@ -90,13 +90,8 @@ func getPlayerGamesHandler(dbConn *sql.DB) http.HandlerFunc {
 		filters := make(map[string]interface{})
 		if playerID, ok := vars["playerID"]; ok {
 			var game models.Game
-			var id int
 			var err error
-			if id, err = strconv.Atoi(playerID); err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-			filters["fromPlayerID"] = id
+			filters["fromPlayerID"] = playerID
 
 			limit, offset := parseLimitAndOffset(urlVars)
 			filters["limit"] = limit
