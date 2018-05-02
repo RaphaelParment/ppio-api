@@ -33,7 +33,7 @@ func fillDb(dbConn *sql.DB) {
 	players := utils.GetPlayers()
 
 	for _, player := range players {
-		_ := player.Insert(dbConn)
+		_ = player.Insert(dbConn)
 	}
 	fmt.Println("Players inserted")
 
