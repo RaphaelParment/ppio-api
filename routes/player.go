@@ -81,6 +81,51 @@ func getPlayerHandler(dbConn *sql.DB) http.HandlerFunc {
 	return http.HandlerFunc(fn)
 }
 
+func getPlayerGamesHandler(dbConn *sql.DB) http.HandlerFunc {
+
+	fn := func(w http.ResponseWriter, req *http.Request) {
+
+		vars := mux.Vars(req)
+		urlVars := req.URL.Query()
+		filters := make(map[string]interface{})
+		if playerID, ok := vars["playerID"]; ok {
+			var game models.Game
+			var id int
+			var err error
+			if id, err = strconv.Atoi(playerID); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			filters["fromPlayerID"] = id
+
+			limit, offset := parseLimitAndOffset(urlVars)
+			filters["limit"] = limit
+			filters["offset"] = offset
+
+			games, countRow, err := game.GetAll(dbConn, filters)
+
+			gamesResponse := &GamesResponse{
+				Count: countRow,
+				Items: games,
+			}
+
+			gamesJSON, err := json.Marshal(gamesResponse)
+
+			if err != nil {
+				log.Fatalf("Could not parse player: %v, err: %v",
+					gamesResponse, err)
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(gamesJSON)
+		} else {
+			http.Error(w, "No player ID given", http.StatusBadRequest)
+		}
+	}
+
+	return http.HandlerFunc(fn)
+}
+
 func addPlayerHandler(dbConn *sql.DB) http.HandlerFunc {
 
 	fn := func(w http.ResponseWriter, req *http.Request) {

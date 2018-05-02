@@ -56,6 +56,15 @@ func prepareGameWhereClause(filter map[string]interface{}, queryBld *bytes.Buffe
 		*params = append(*params, validatedValue)
 	}
 
+	fromPlayer, ok := filter["fromPlayerID"]
+	if ok {
+		fromPlayerID := fromPlayer.(string)
+		queryBld.WriteString(fmt.Sprintf(" AND player1_id = $%d OR player2_id = $%d", placeHolderCnt, placeHolderCnt+1))
+		placeHolderCnt = placeHolderCnt + 2
+		*params = append(*params, fromPlayerID)
+		*params = append(*params, fromPlayerID)
+	}
+
 	if playerClause {
 		queryBld.WriteString(fmt.Sprintf(" AND (p2.first_name = $%d OR p1.first_name = $%d)", placeHolderCnt, placeHolderCnt+1))
 		placeHolderCnt = placeHolderCnt + 2
