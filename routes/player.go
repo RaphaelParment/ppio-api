@@ -51,28 +51,30 @@ func getPlayerHandler(dbConn *sql.DB) http.HandlerFunc {
 		vars := mux.Vars(req)
 		if playerID, ok := vars["playerID"]; ok {
 			var player models.Player
-			var id int
 			var err error
-			if id, err = strconv.Atoi(playerID); err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-			player.ID = int64(id)
+
+			player.ID = playerID
 			err = player.GetByID(dbConn)
 
 			if err != nil {
-				log.Fatalf("Could not get player %v, err: %v", player, err)
+				log.Printf("Could not get player %v, err: %v\n", player, err)
+				http.Error(w, "Player ID not found.\n",
+					http.StatusNotFound)
+				return
 			}
-
 			playerJSON, err := json.Marshal(player)
 
 			if err != nil {
-				log.Fatalf("Could not parse player: %v, err: %v",
+				log.Printf("Could not parse player: %v, err: %v",
 					player, err)
+				http.Error(w, "Could not parse player.\n",
+					http.StatusInternalServerError)
+				return
 			}
 
 			w.Header().Set("Content-Type", "application/json")
 			w.Write(playerJSON)
+
 		} else {
 			http.Error(w, "No player ID given", http.StatusBadRequest)
 		}
@@ -144,11 +146,16 @@ func addPlayerHandler(dbConn *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		if _, err := player.Insert(dbConn); err != nil {
+		if err := player.Insert(dbConn); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			w.WriteHeader(http.StatusOK)
+			return
 		}
+		playerJSON, err := json.Marshal(player)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Write(playerJSON)
 	}
 
 	return http.HandlerFunc(fn)
@@ -205,13 +212,9 @@ func updatePlayerHandler(dbConn *sql.DB) http.HandlerFunc {
 		vars := mux.Vars(req)
 		if playerID, ok := vars["playerID"]; ok {
 			var player models.Player
-			var id int
 			var err error
-			if id, err = strconv.Atoi(playerID); err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-			player.ID = int64(id)
+
+			player.ID = playerID
 			requestBytes, err := ioutil.ReadAll(req.Body)
 			if err != nil {
 				log.Printf("Could not handle PUT request for update player. Error: %v", err)

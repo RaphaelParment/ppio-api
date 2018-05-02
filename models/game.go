@@ -13,13 +13,13 @@ const gameTable = "game g"
 
 // Game structure
 type Game struct {
-	ID              int64     `json:"id,omitempty"`
+	ID              string    `json:"id,omitempty"`
 	DateTime        time.Time `json:"datetime,omitempty"`
-	Player1ID       int64     `json:"player1Id"`
-	Player2ID       int64     `json:"player2Id"`
-	WinnerID        int64     `json:"winnerId"`
+	Player1ID       string    `json:"player1Id"`
+	Player2ID       string    `json:"player2Id"`
+	WinnerID        string    `json:"winnerId"`
 	ValidationState int       `json:"validationState"`
-	EditedByID      int64     `json:"editedById"`
+	EditedByID      string    `json:"editedById"`
 	Sets            []Set     `json:"sets"`
 }
 
@@ -82,9 +82,9 @@ func prepareGameWhereClause(filter map[string]interface{}, queryBld *bytes.Buffe
 }
 
 // Insert game
-func (game *Game) Insert(dbConn *sql.DB) (int64, error) {
+func (game *Game) Insert(dbConn *sql.DB) (string, error) {
 
-	var id int64
+	var id string
 	err := dbConn.QueryRow(`
 		INSERT INTO game (player1_id, player2_id, winner_id, validation_state,
 		edited_by_id, datetime)
@@ -94,7 +94,7 @@ func (game *Game) Insert(dbConn *sql.DB) (int64, error) {
 
 	if err != nil {
 		log.Printf("Could not insert game %v. Error: %v\n", game, err)
-		return 0, err
+		return "", err
 	}
 
 	for _, set := range game.Sets {
@@ -106,11 +106,11 @@ func (game *Game) Insert(dbConn *sql.DB) (int64, error) {
 		if err != nil {
 			log.Printf("Could not insert set %v for game %v. Error: %v\n",
 				set, game, err)
-			return 0, err
+			return "", err
 		}
 	}
 
-	log.Printf("Inserted game with ID %v\n", game)
+	log.Printf("Succesfully inserted game %v\n", game)
 
 	return id, nil
 }
@@ -236,12 +236,14 @@ func (game *Game) Update(dbConn *sql.DB) (int64, error) {
 		return 0, err
 	}
 
+	log.Printf("Successfully updated game %v\n", game)
+
 	return rowsAffected, nil
 
 }
 
 // Delete deletes a game
-func (game *Game) Delete(dbConn *sql.DB) (int64, error) {
+func (game *Game) Delete(dbConn *sql.DB) (string, error) {
 
 	result, err := dbConn.Exec(`
 		DELETE FROM game
@@ -249,7 +251,7 @@ func (game *Game) Delete(dbConn *sql.DB) (int64, error) {
 
 	if err != nil {
 		log.Printf("Could not delete game: %v, err: %v\n", game, err)
-		return 0, err
+		return "", err
 	}
 
 	rowsAffected, err := result.RowsAffected()
@@ -257,13 +259,13 @@ func (game *Game) Delete(dbConn *sql.DB) (int64, error) {
 		log.Printf(`
 			Could not get the number of affected rows while
 			deleting game: %v. Error: %v\n`, game, err)
-		return 0, err
+		return "", err
 	}
 
 	if rowsAffected != 1 {
 		log.Printf("Delete more than 1 game... Error\n")
 		err = errors.New("deleting more than 1 item")
-		return 0, err
+		return "", err
 	}
 
 	log.Printf("Successfully deleted game %v\n", game)

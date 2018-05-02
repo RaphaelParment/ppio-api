@@ -23,6 +23,12 @@ func GetPlayers() []*models.Player {
 	if err != nil {
 		log.Fatalf("Error occured when unmarshalling the dummy players. Error :%v", err)
 	}
+
+	for _, player := range(c) {
+		player.Email = fmt.Sprintf("%s.%s@brol.com",
+			player.FirstName, player.LastName)
+	}
+
 	return c
 }
 
@@ -61,8 +67,8 @@ func GenerateGames(players []*models.Player) []models.Game {
 			if homePlayer.FirstName != awayPlayer.FirstName {
 
 				var winner int
-				var winnerID int64
-				var editedByID int64
+				var winnerID string
+				var editedByID string
 				var sets []models.Set
 				var numberOfSets int
 
@@ -117,10 +123,10 @@ func GenerateGames(players []*models.Player) []models.Game {
 					Sets:            sets,
 				}
 
-				if validationState == 2 {
+				if validationState == 1 {
 					validationState = 0
 				} else {
-					validationState = 2
+					validationState = 1
 				}
 
 				games = append(games, game)

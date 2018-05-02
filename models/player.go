@@ -12,9 +12,10 @@ const playerTable = "player p"
 
 // Player Model of the player as stored in the database.
 type Player struct {
-	ID        int64  `json:"id"`
+	ID        string `json:"id"`
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
+	Email     string `json:"email"`
 	Points    int    `json:"points"`
 }
 
@@ -66,34 +67,32 @@ func preparePlayerWhereClause(filter map[string]interface{}, queryBld *bytes.Buf
 }
 
 // Insert Add a new player in db.
-func (player *Player) Insert(dbConn *sql.DB) (int64, error) {
-
-	var id int64
+func (player *Player) Insert(dbConn *sql.DB) error {
 
 	err := dbConn.QueryRow(`
-		INSERT INTO player (first_name, last_name, points)
-		VALUES ($1,$2,$3) RETURNING id`,
-		player.FirstName, player.LastName, player.Points).Scan(&id)
+		INSERT INTO player (first_name, last_name, email, points)
+		VALUES ($1,$2,$3,$4) RETURNING id`,
+		player.FirstName, player.LastName, player.Email, player.Points).Scan(&player.ID)
 
 	if err != nil {
 		log.Printf("Could not create a new player %v. Error: %v\n", player, err)
-		return 0, err
+		return err
 	}
 
 	log.Printf("Inserted player %v\n", player)
 
-	return id, nil
+	return nil
 }
 
 // GetByID Fetch player by ID.
 func (player *Player) GetByID(dbConn *sql.DB) error {
 
 	err := dbConn.QueryRow(`
-		SELECT id, first_name, last_name, points
+		SELECT id, first_name, last_name, email, points 
 		FROM player
 		WHERE id = $1`,
 		&player.ID).Scan(&player.ID, &player.FirstName,
-		&player.LastName, &player.Points)
+		&player.LastName, &player.Email, &player.Points)
 
 	if err != nil {
 		log.Printf("Could not get player %v, err: %v\n", player, err)
@@ -142,7 +141,8 @@ func (player *Player) GetAll(dbConn *sql.DB, filters map[string]interface{}) ([]
 	}
 	for rows.Next() {
 		var player Player
-		rows.Scan(&player.ID, &player.FirstName, &player.LastName, &player.Points)
+		rows.Scan(&player.ID, &player.FirstName, &player.LastName,
+			&player.Email, &player.Points)
 		players = append(players, player)
 
 	}
@@ -156,10 +156,11 @@ func (player *Player) GetAll(dbConn *sql.DB, filters map[string]interface{}) ([]
 func (player *Player) Update(dbConn *sql.DB) (int64, error) {
 
 	result, err := dbConn.Exec(`
-		UPDATE player
-		SET first_name = $1, last_name = $2, points = $3
-		WHERE id = $4`,
-		player.FirstName, player.LastName, player.Points, player.ID)
+		UPDATE player 
+		SET first_name = $1, last_name = $2, email = $3 points = $4
+		WHERE id = $5`,
+		player.FirstName, player.LastName, player.Email,
+		player.Points, player.ID)
 
 	if err != nil {
 		log.Printf("Could not update player in DB. Player: %v / Error: %v\n",
