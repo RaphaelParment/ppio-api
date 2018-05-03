@@ -39,6 +39,12 @@ func parseLimitAndOffset(vars url.Values) (int, int) {
 func GetRouter(dbConn *sql.DB) *mux.Router {
 	r := mux.NewRouter()
 	s := r.PathPrefix("/ppio").Subrouter()
+
+	s.HandleFunc("/login", login()).Methods(http.MethodGet)
+	s.HandleFunc("/logout", logout()).Methods(http.MethodGet)
+	s.HandleFunc("/login/callback", loginCallback()).Methods(http.MethodGet)
+
+
 	s.HandleFunc("/players/{playerID}", getPlayerHandler(dbConn)).Methods(http.MethodGet)
 	s.HandleFunc("/players/{playerID}/games", getPlayerGamesHandler(dbConn)).Methods(http.MethodGet)
 	s.HandleFunc("/players/{playerID}", updatePlayerHandler(dbConn)).Methods(http.MethodPut)

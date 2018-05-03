@@ -11,7 +11,6 @@ import (
 	"flag"
 	"net/http"
 	"ppio/routes"
-
 	_ "github.com/lib/pq"
 )
 
@@ -48,6 +47,7 @@ func fillDb(dbConn *sql.DB) {
 
 func main() {
 
+
 	initDbData := flag.Bool("initDbData", false, "Insert dummy data in database.")
 
 	flag.Parse()
@@ -65,6 +65,7 @@ func main() {
 	// Handle the routes with gorillamux
 
 	go func() {
+		fmt.Println("listening on port 9001")
 		http.ListenAndServe(":9001", routes.GetRouter(dbConn))
 	}()
 
