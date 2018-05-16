@@ -2,15 +2,40 @@ package routes
 
 import (
 	"net/http"
-	_ "github.com/coreos/go-oidc"
 	"golang.org/x/oauth2"
 	"github.com/coreos/go-oidc"
 	"encoding/json"
 	"context"
 	"log"
+	"database/sql"
+	"ppio/utils"
 )
 
+type PPIOHandler func( http.ResponseWriter, *http.Request, *sql.DB)
 
+func authenticateFilter(handler PPIOHandler, dbConn *sql.DB) http.HandlerFunc {
+
+	fn := func(w http.ResponseWriter, req *http.Request) {
+		store := utils.GetSessionStore()
+		session, _ := store.Get(req, "ppio-session")
+		session.Values["sine"] = "Patrick"
+
+
+
+
+
+
+
+
+
+		log.Printf("requested uri " + req.RequestURI)
+		// If authenticated :
+		handler(w, req, dbConn);
+		// Reject 401
+	}
+
+	return http.HandlerFunc(fn);
+}
 
 func login() http.HandlerFunc {
 
@@ -39,6 +64,7 @@ func login() http.HandlerFunc {
 
 
 	fn := func(w http.ResponseWriter, req *http.Request) {
+		log.Print(req.RequestURI)
 		http.Redirect(w, req, config.AuthCodeURL(state), http.StatusFound)
 
 	}
@@ -46,6 +72,11 @@ func login() http.HandlerFunc {
 	return http.HandlerFunc(fn)
 }
 
+type AuthUser struct {
+	FirstName    string
+	LastName     string
+	Email        string
+}
 func loginCallback() http.HandlerFunc {
 
 	ctx := context.Background()
@@ -120,6 +151,21 @@ func loginCallback() http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		store := utils.GetSessionStore()
+		session, _ := store.Get(r, "ppio-session")
+
+
+		readValue := session.Values["authUser"]
+
+		var authUser = &AuthUser{}
+
+		if authUser, ok := authUser.(*AuthUser);
+
+
+
+		session.Save(r, w)
+
 		w.Write(data)
 
 	}

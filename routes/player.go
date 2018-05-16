@@ -44,44 +44,40 @@ func parsePlayerParameters(vars url.Values) (map[string]interface{}, error) {
 	return filters, nil
 }
 
-func getPlayerHandler(dbConn *sql.DB) http.HandlerFunc {
+func getPlayerHandler(w http.ResponseWriter, req *http.Request, dbConn *sql.DB) {
 
-	fn := func(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	if playerID, ok := vars["playerID"]; ok {
+		var player models.Player
+		var err error
 
-		vars := mux.Vars(req)
-		if playerID, ok := vars["playerID"]; ok {
-			var player models.Player
-			var err error
+		player.ID = playerID
+		err = player.GetByID(dbConn)
 
-			player.ID = playerID
-			err = player.GetByID(dbConn)
-
-			if err != nil {
-				log.Printf("Could not get player %v, err: %v\n", player, err)
-				http.Error(w, "Player ID not found.\n",
-					http.StatusNotFound)
-				return
-			}
-			playerJSON, err := json.Marshal(player)
-
-			if err != nil {
-				log.Printf("Could not parse player: %v, err: %v",
-					player, err)
-				http.Error(w, "Could not parse player.\n",
-					http.StatusInternalServerError)
-				return
-			}
-
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(playerJSON)
-
-		} else {
-			http.Error(w, "No player ID given", http.StatusBadRequest)
+		if err != nil {
+			log.Printf("Could not get player %v, err: %v\n", player, err)
+			http.Error(w, "Player ID not found.\n",
+				http.StatusNotFound)
+			return
 		}
-	}
+		playerJSON, err := json.Marshal(player)
 
-	return http.HandlerFunc(fn)
+		if err != nil {
+			log.Printf("Could not parse player: %v, err: %v",
+				player, err)
+			http.Error(w, "Could not parse player.\n",
+				http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(playerJSON)
+
+	} else {
+		http.Error(w, "No player ID given", http.StatusBadRequest)
+	}
 }
+
 
 func getPlayerGamesHandler(dbConn *sql.DB) http.HandlerFunc {
 

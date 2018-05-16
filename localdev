@@ -1,0 +1,7 @@
+Dev server : 10.1.253.82
+root/itsobvious
+port : 9001
+
+
+
+ssh -L 26257:localhost:26257 -L54117:localhost:54117 root@10.1.253.82
