@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"ppio/models"
+	"github.com/RaphaelParment/ppio-api/models"
 	"strconv"
 
 	"github.com/gorilla/mux"
