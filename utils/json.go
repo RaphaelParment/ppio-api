@@ -7,8 +7,9 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"ppio/models"
 	"time"
+
+	"github.com/RaphaelParment/ppio-api/models"
 )
 
 func GetPlayers() []*models.Player {

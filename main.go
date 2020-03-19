@@ -4,13 +4,15 @@ import (
 	"database/sql"
 	"log"
 	"os"
-	"ppio/utils"
+
+	"github.com/RaphaelParment/ppio-api/utils"
 
 	"fmt"
 
 	"flag"
 	"net/http"
-	"ppio/routes"
+
+	"github.com/RaphaelParment/ppio-api/routes"
 
 	_ "github.com/lib/pq"
 )
