@@ -22,7 +22,7 @@ Function which inserts dummy data into the database.
 */
 func initialiseDb() *sql.DB {
 
-	db, err := sql.Open("postgres", "postgresql://ppio_user@localhost:26257/ppio?sslmode=disable")
+	db, err := sql.Open("postgres", "postgresql://ppio@127.0.0.1:5432/ppio?sslmode=disable")
 	if err != nil {
 		log.Fatal("error connecting to the database: ", err)
 	}
