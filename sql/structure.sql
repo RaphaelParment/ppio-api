@@ -5,13 +5,11 @@ CREATE DATABASE ppio;
 USE ppio;
 
 CREATE TABLE player (
-    id UUID NOT NULL DEFAULT gen_random_uuid(),
-    first_name STRING NULL,
-    last_name STRING NULL,
-    email STRING NOT NULL UNIQUE,
-    points INT NULL,
-    CONSTRAINT "primary" PRIMARY KEY (id ASC),
-    FAMILY "primary" (id, first_name, last_name, points)
+    id serial PRIMARY KEY,
+    first_name VARCHAR(32) NOT NULL,
+    last_name VARCHAR(32) NOT NULL,
+    email VARCHAR (64) UNIQUE NOT NULL,
+    points INT
 );
 
 CREATE TABLE validation (
