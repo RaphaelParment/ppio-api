@@ -1,84 +1,33 @@
 package main
 
 import (
-	"database/sql"
 	"log"
+	"net/http"
 	"os"
 
-	"github.com/RaphaelParment/ppio-api/utils"
-
-	"fmt"
-
-	"flag"
-	"net/http"
-
-	"github.com/RaphaelParment/ppio-api/routes"
+	"github.com/RaphaelParment/ppio-api/app"
+	"github.com/RaphaelParment/ppio-api/database"
+	"github.com/RaphaelParment/ppio-api/handlers"
 
 	_ "github.com/lib/pq"
 )
 
-/**
-Function which inserts dummy data into the database.
-*/
-func initialiseDb() *sql.DB {
-
-	db, err := sql.Open("postgres", "postgresql://ppio@127.0.0.1:5432/ppio?sslmode=disable")
-	if err != nil {
-		log.Fatal("error connecting to the database: ", err)
-	}
-
-	return db
-}
-
-func fillDb(dbConn *sql.DB) {
-
-	players := utils.GetPlayers()
-
-	for _, player := range players {
-		_ = player.Insert(dbConn)
-	}
-	fmt.Println("Players inserted")
-
-	games := utils.GenerateGames(players)
-
-	for _, game := range games {
-
-		_, _ = game.Insert(dbConn)
-	}
-	fmt.Println("Games inserted")
-}
-
 func main() {
+	logger := log.New(os.Stdout, "ppio: ", log.LstdFlags)
 
-	initDbData := flag.Bool("initDbData", false, "Insert dummy data in database.")
-
-	flag.Parse()
-	end := make(chan bool)
-
-	dbConn := initialiseDb()
-	defer dbConn.Close()
-
-	if *initDbData {
-		fillDb(dbConn)
-		log.Printf("Initialised the database with dummy data. Terminating...")
-		os.Exit(0)
+	db, err := database.InitDB()
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	// Handle the routes with gorillamux
+	app := app.App{}
+	app.Logger = logger
+	app.CreateRouter()
+	app.Database = db
 
-	go func() {
-		http.ListenAndServe(":9001", routes.GetRouter(dbConn))
-	}()
+	// Creating Players handler
+	app.Players = handlers.NewPlayers()
 
-	// TODO check where it could be sent ?
-	// Handle the termination of the program properly.
-	for {
-		select {
-		case StopProg := <-end:
-			if StopProg {
-				os.Exit(0)
-			}
-		}
-	}
-
+	logger.Print("main : Listening :9001")
+	log.Fatal(http.ListenAndServe(":9001", app.Router))
 }
