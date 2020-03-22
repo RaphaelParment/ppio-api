@@ -30,9 +30,21 @@ func (a *App) CreateRouter() {
 	s := a.Router.PathPrefix("/ppio").Subrouter()
 
 	getRtr := s.Methods(http.MethodGet).Subrouter()
+	postRtr := s.Methods(http.MethodPost).Subrouter()
+	putRtr := s.Methods(http.MethodPut).Subrouter()
+	delRtr := s.Methods(http.MethodDelete).Subrouter()
+
+	postRtr.Use(a.Players.MiddelwarePlayerValidation)
+	putRtr.Use(a.Players.MiddelwarePlayerValidation)
 
 	getRtr.HandleFunc("/players", a.handleRequest(a.Players.GetPlayers))
 	getRtr.HandleFunc("/players/{id:[0-9]+}", a.handleRequest(a.Players.GetPlayer))
-	http.Handle("/", a.Router)
 
+	postRtr.HandleFunc("/players", a.handleRequest(a.Players.AddPlayer))
+
+	putRtr.HandleFunc("/players/{id:[0-9]+}", a.handleRequest(a.Players.UpdatePlayer))
+
+	delRtr.HandleFunc("/players/{id:[0-9]+}", a.handleRequest(a.Players.DeletePlayer))
+
+	http.Handle("/", a.Router)
 }
