@@ -1,8 +1,23 @@
+// Package classification: PPIO API
+//
+// Documentation for Player API
+//
+// 	Schemes: http
+// 	BasePath: /ppio
+//	Version: 1.0.0
+//
+//	Consumes:
+//	- application/json
+//
+//	Produces:
+//	- application/json
+// swagger:meta
 package handlers
 
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -23,6 +38,11 @@ func NewPlayers() *Players {
 	return &Players{}
 }
 
+// swagger:route GET /players{id} players getPlayers
+// Returns a list of players
+// responses:
+// 	200: playersResponse
+
 // GetPlayers handler returns all players
 func (p *Players) GetPlayers(db *sql.DB, l *log.Logger, rw http.ResponseWriter, r *http.Request) {
 	l.Println("handlers : GET players")
@@ -39,6 +59,12 @@ func (p *Players) GetPlayers(db *sql.DB, l *log.Logger, rw http.ResponseWriter, 
 		return
 	}
 }
+
+// swagger:route GET /players/{id} players getPlayer
+// Return a single player
+// responses:
+//	200: playersResponse
+//	404: errorResponse
 
 // GetPlayer handler returns a single player based on the <id> from the request
 func (p *Players) GetPlayer(db *sql.DB, l *log.Logger, rw http.ResponseWriter, r *http.Request) {
@@ -69,6 +95,14 @@ func (p *Players) GetPlayer(db *sql.DB, l *log.Logger, rw http.ResponseWriter, r
 	}
 }
 
+// swagger:route POST /players players createPlayer
+// Create a new player
+//
+// responses:
+//	200: playerResponse
+//  422: errorValidation
+//  501: errorResponse
+
 // AddPlayer handler adds the player from the body of the request to the database
 func (p *Players) AddPlayer(db *sql.DB, l *log.Logger, rw http.ResponseWriter, r *http.Request) {
 	l.Print("handlers : POST player")
@@ -85,6 +119,14 @@ func (p *Players) AddPlayer(db *sql.DB, l *log.Logger, rw http.ResponseWriter, r
 		return
 	}
 }
+
+// swagger:route PUT /players/{id} players updatePlayer
+// Updates a player
+//
+// responses:
+//	201: noContentResponse
+//  404: errorResponse
+//  422: errorValidation
 
 // UpdatePlayer handler updates the player with id <id> from the request,
 // by the player from the the request
@@ -116,6 +158,14 @@ func (p *Players) UpdatePlayer(db *sql.DB, l *log.Logger, rw http.ResponseWriter
 		return
 	}
 }
+
+// swagger:route DELETE /players/{id} players deletePlayer
+// Delete a player
+//
+// responses:
+//	201: noContentResponse
+//  404: errorResponse
+//  501: errorResponse
 
 // DeletePlayer handler deletes the player with id <id> from the request
 func (p *Players) DeletePlayer(db *sql.DB, l *log.Logger, rw http.ResponseWriter, r *http.Request) {
@@ -149,6 +199,16 @@ func (p *Players) MiddelwarePlayerValidation(next http.Handler) http.Handler {
 		err := player.FromJSON(r.Body)
 		if err != nil {
 			http.Error(rw, "Wrong JSON", http.StatusBadRequest)
+			return
+		}
+
+		err = player.Validate()
+		if err != nil {
+			http.Error(
+				rw,
+				fmt.Sprintf("Error reading player: %s", err),
+				http.StatusBadRequest,
+			)
 			return
 		}
 

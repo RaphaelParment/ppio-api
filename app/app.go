@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/RaphaelParment/ppio-api/handlers"
+	"github.com/go-openapi/runtime/middleware"
 	"github.com/gorilla/mux"
 )
 
@@ -39,6 +40,13 @@ func (a *App) CreateRouter() {
 
 	getRtr.HandleFunc("/players", a.handleRequest(a.Players.GetPlayers))
 	getRtr.HandleFunc("/players/{id:[0-9]+}", a.handleRequest(a.Players.GetPlayer))
+
+	a.Router.PathPrefix("/ppio/").Handler(http.StripPrefix("/ppio/", http.FileServer(http.Dir("./"))))
+	a.Router.Handle("/swagger.yaml", http.FileServer(http.Dir("./")))
+
+	opts := middleware.RedocOpts{SpecURL: "/swagger.yaml"}
+	sh := middleware.Redoc(opts, nil)
+	a.Router.Handle("/docs", sh).Methods(http.MethodGet)
 
 	postRtr.HandleFunc("/players", a.handleRequest(a.Players.AddPlayer))
 

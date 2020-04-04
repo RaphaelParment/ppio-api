@@ -1,0 +1,176 @@
+basePath: /ppio
+consumes:
+- application/json
+definitions:
+  GenericError:
+    description: GenericError is a generic error message returned by a server
+    properties:
+      message:
+        type: string
+        x-go-name: Message
+    type: object
+    x-go-package: github.com/RaphaelParment/ppio-api/data
+  Player:
+    properties:
+      email:
+        description: The email of the player
+        type: string
+        x-go-name: Email
+      firstName:
+        description: The first name of the player
+        type: string
+        x-go-name: FirstName
+      id:
+        description: The id of the player
+        minimum: 1
+        type: string
+        x-go-name: ID
+      lastName:
+        description: The last name of the player
+        type: string
+        x-go-name: LastName
+      points:
+        description: The number of points
+        format: int64
+        maximum: 100
+        minimum: 1
+        type: integer
+        x-go-name: Points
+    required:
+    - id
+    - firstName
+    - lastName
+    - email
+    type: object
+    x-go-package: github.com/RaphaelParment/ppio-api/data
+  ValidationError:
+    description: ValidationError is a collection of validation error messages
+    properties:
+      messages:
+        items:
+          type: string
+        type: array
+        x-go-name: Messages
+    type: object
+    x-go-package: github.com/RaphaelParment/ppio-api/data
+info:
+  description: Documentation for Player API
+  title: PPIO API
+  version: 1.0.0
+paths:
+  /players:
+    post:
+      description: Create a new player
+      operationId: createPlayer
+      parameters:
+      - description: |-
+          Player data structure to Update or Create.
+          Note: the id field is ignored by update and create operations
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/Player'
+      responses:
+        "200":
+          $ref: '#/responses/playerResponse'
+        "422":
+          $ref: '#/responses/errorValidation'
+        "501":
+          $ref: '#/responses/errorResponse'
+      tags:
+      - players
+  /players/{id}:
+    delete:
+      description: Delete a player
+      operationId: deletePlayer
+      parameters:
+      - description: The id of the player for which the operation relates
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+        x-go-name: ID
+      responses:
+        "201":
+          $ref: '#/responses/noContentResponse'
+        "404":
+          $ref: '#/responses/errorResponse'
+        "501":
+          $ref: '#/responses/errorResponse'
+      tags:
+      - players
+    get:
+      description: Return a single player
+      operationId: getPlayer
+      responses:
+        "200":
+          $ref: '#/responses/playersResponse'
+        "404":
+          $ref: '#/responses/errorResponse'
+      tags:
+      - players
+    put:
+      description: Updates a player
+      operationId: updatePlayer
+      parameters:
+      - description: |-
+          Player data structure to Update or Create.
+          Note: the id field is ignored by update and create operations
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/Player'
+      - description: The id of the player for which the operation relates
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+        x-go-name: ID
+      responses:
+        "201":
+          $ref: '#/responses/noContentResponse'
+        "404":
+          $ref: '#/responses/errorResponse'
+        "422":
+          $ref: '#/responses/errorValidation'
+      tags:
+      - players
+  /players{id}:
+    get:
+      description: Returns a list of players
+      operationId: getPlayers
+      responses:
+        "200":
+          $ref: '#/responses/playersResponse'
+      tags:
+      - players
+produces:
+- application/json
+responses:
+  errorResponse:
+    description: Generic error message returned as a string
+    schema:
+      $ref: '#/definitions/GenericError'
+  errorValidation:
+    description: Validation errors defined as an array of strings
+    schema:
+      $ref: '#/definitions/ValidationError'
+  noContentResponse:
+    description: No content is returned by this API endpoint
+  playerResponse:
+    description: Data structure representing a single product
+    schema:
+      $ref: '#/definitions/Player'
+  playersResponse:
+    description: A list of players
+    schema:
+      items:
+        $ref: '#/definitions/Player'
+      type: array
+schemes:
+- http
+swagger: "2.0"
