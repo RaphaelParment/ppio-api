@@ -1,4 +1,4 @@
-package myhttp
+package http
 
 import (
 	"database/sql"
@@ -31,6 +31,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) respond(w http.ResponseWriter, r *http.Request, data interface{}, status int) {
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(status)
 	if data != nil {
 		err := json.NewEncoder(w).Encode(data)

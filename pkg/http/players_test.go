@@ -1,4 +1,4 @@
-package myhttp
+package http
 
 import (
 	"database/sql"
@@ -13,12 +13,12 @@ import (
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 
-	"github.com/RaphaelParment/ppio-api/data"
-	"github.com/RaphaelParment/ppio-api/database"
+	"github.com/RaphaelParment/ppio-api/pkg/core"
+	"github.com/RaphaelParment/ppio-api/pkg/storage"
 )
 
 func setup() *server {
-	db, _, err := database.SetupDB()
+	db, _, err := storage.SetupDB("ppio_tests")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,8 +31,10 @@ func setup() *server {
 	}
 	srv.routes()
 
+	l.Println("removing items")
+
 	l.Println("inserting dummy players")
-	database.InsertDummyData(db)
+	storage.InsertDummyData(db)
 
 	return &srv
 }
@@ -41,9 +43,9 @@ func TestHandlePlayersGet(t *testing.T) {
 	srv := setup()
 	defer t.Cleanup(func() {
 		srv.Logger.Println("removing players")
-		database.RemoveAllPlayers(srv.DB)
+		storage.RemoveAllPlayers(srv.DB)
 		srv.Logger.Println("inserting dummy players")
-		database.InsertDummyData(srv.DB)
+		storage.InsertDummyData(srv.DB)
 		srv.Logger.Println("closing db")
 		srv.DB.Close()
 	})
@@ -52,14 +54,14 @@ func TestHandlePlayersGet(t *testing.T) {
 		name      string
 		operation func(*sql.DB) error
 		status    int
-		body      []data.Player
+		body      []core.Player
 		err       string
 	}{
-		{name: "Regular", operation: nil, body: []data.Player{
+		{name: "Regular", operation: nil, body: []core.Player{
 			{ID: 1, FirstName: "Alice", LastName: "David", Email: "alice.david@brol.com", Points: 10},
 			{ID: 2, FirstName: "Bob", LastName: "Raymon", Email: "bob.raymon@brol.com", Points: 0}},
 			status: 200},
-		{name: "Empty", operation: database.RemoveAllPlayers, body: nil, status: 200},
+		{name: "Empty", operation: storage.RemoveAllPlayers, body: nil, status: 200},
 	}
 
 	for _, tc := range tt {
@@ -84,7 +86,7 @@ func TestHandlePlayersGet(t *testing.T) {
 
 			if res.Body != nil {
 
-				var players []data.Player
+				var players []core.Player
 				if err := json.NewDecoder(res.Body).Decode(&players); err != nil {
 					t.Errorf("could not convert players to JSON; %v", err)
 				}
@@ -103,9 +105,9 @@ func TestRouting(t *testing.T) {
 	srv := setup()
 	defer t.Cleanup(func() {
 		srv.Logger.Println("removing players")
-		database.RemoveAllPlayers(srv.DB)
+		storage.RemoveAllPlayers(srv.DB)
 		srv.Logger.Println("inserting dummy players")
-		database.InsertDummyData(srv.DB)
+		storage.InsertDummyData(srv.DB)
 		srv.Logger.Println("closing db")
 		srv.DB.Close()
 	})
@@ -121,11 +123,11 @@ func TestRouting(t *testing.T) {
 	}
 
 	if res.Body != nil {
-		results := []data.Player{
+		results := []core.Player{
 			{ID: 1, FirstName: "Alice", LastName: "David", Email: "alice.david@brol.com", Points: 10},
 			{ID: 2, FirstName: "Bob", LastName: "Raymon", Email: "bob.raymon@brol.com", Points: 0},
 		}
-		var players []data.Player
+		var players []core.Player
 		if err := json.NewDecoder(res.Body).Decode(&players); err != nil {
 			t.Fatalf("could not convert players to JSON; %v", err)
 		}
