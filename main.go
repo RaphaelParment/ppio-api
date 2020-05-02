@@ -1,33 +1,34 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 
-	"github.com/RaphaelParment/ppio-api/app"
-	"github.com/RaphaelParment/ppio-api/database"
-	"github.com/RaphaelParment/ppio-api/handlers"
+	ppioHTTP "github.com/RaphaelParment/ppio-api/pkg/http"
+	"github.com/RaphaelParment/ppio-api/pkg/storage"
+	"github.com/pkg/errors"
 
 	_ "github.com/lib/pq"
 )
 
 func main() {
-	logger := log.New(os.Stdout, "ppio: ", log.LstdFlags)
-
-	db, err := database.InitDB()
-	if err != nil {
-		log.Fatal(err)
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
 	}
+}
 
-	app := app.App{}
-	app.Logger = logger
-	app.CreateRouter()
-	app.Database = db
+func run() error {
+	db, dbTidy, err := storage.SetupDB("ppio")
+	if err != nil {
+		return errors.Wrap(err, "setup database")
+	}
+	defer dbTidy()
+	l := log.New(os.Stdout, "ppio :", log.LstdFlags)
+	srv := ppioHTTP.NewServer(db, l)
 
-	// Creating Players handler
-	app.Players = handlers.NewPlayers()
-
-	logger.Print("main : Listening :9001")
-	log.Fatal(http.ListenAndServe(":9001", app.Router))
+	http.ListenAndServe(":9001", srv)
+	return nil
 }
