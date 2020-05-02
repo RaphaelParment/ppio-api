@@ -11,6 +11,7 @@ definitions:
     type: object
     x-go-package: github.com/RaphaelParment/ppio-api/data
   Player:
+    description: Player contains the information of a player
     properties:
       email:
         description: The email of the player
@@ -22,8 +23,9 @@ definitions:
         x-go-name: FirstName
       id:
         description: The id of the player
+        format: int64
         minimum: 1
-        type: string
+        type: integer
         x-go-name: ID
       lastName:
         description: The last name of the player
