@@ -1,15 +1,15 @@
-package database
+package storage
 
 import (
 	"database/sql"
 	"fmt"
 
-	"github.com/RaphaelParment/ppio-api/data"
+	"github.com/RaphaelParment/ppio-api/pkg/core"
 )
 
 // GetPlayers returns all players
-func GetPlayers(db *sql.DB) (data.Players, error) {
-	var players data.Players
+func GetPlayers(db *sql.DB) (core.Players, error) {
+	var players core.Players
 	rows, err := db.Query("SELECT * FROM player")
 	defer rows.Close()
 	if err != nil {
@@ -17,7 +17,7 @@ func GetPlayers(db *sql.DB) (data.Players, error) {
 	}
 
 	for rows.Next() {
-		var p data.Player
+		var p core.Player
 		err := rows.Scan(&p.ID, &p.FirstName, &p.LastName, &p.Email, &p.Points)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan players")
@@ -28,8 +28,8 @@ func GetPlayers(db *sql.DB) (data.Players, error) {
 }
 
 // GetPlayer returns the player with id <id>
-func GetPlayer(db *sql.DB, id int) (*data.Player, error) {
-	var p data.Player
+func GetPlayer(db *sql.DB, id int) (*core.Player, error) {
+	var p core.Player
 	q := "SELECT * FROM player WHERE id = $1"
 	row := db.QueryRow(q, id)
 	err := row.Scan(&p.ID, &p.FirstName, &p.LastName, &p.Email, &p.Points)
@@ -43,7 +43,7 @@ func GetPlayer(db *sql.DB, id int) (*data.Player, error) {
 }
 
 // AddPlayer inserts the player pointed to by <p>
-func AddPlayer(db *sql.DB, p *data.Player) error {
+func AddPlayer(db *sql.DB, p *core.Player) error {
 	q := "INSERT INTO player (first_name, last_name, email, points) VALUES ($1, $2, $3, $4)"
 	_, err := db.Exec(q, p.FirstName, p.LastName, p.Email, p.Points)
 	if err != nil {
@@ -55,7 +55,7 @@ func AddPlayer(db *sql.DB, p *data.Player) error {
 
 // UpdatePlayer updates the player with id <id> with the field of the player pointed to by <p>.
 // If there is no player with id <id>, false is returned as first parameter
-func UpdatePlayer(db *sql.DB, id int, p *data.Player) (bool, error) {
+func UpdatePlayer(db *sql.DB, id int, p *core.Player) (bool, error) {
 	q := "UPDATE player SET first_name = $1, last_name = $2, email = $3, points = $4 WHERE id = $5"
 	res, err := db.Exec(q, p.FirstName, p.LastName, p.Email, p.Points, id)
 	if err != nil {
@@ -87,4 +87,25 @@ func DeletePlayer(db *sql.DB, id int) (bool, error) {
 		return false, nil
 	}
 	return true, nil
+}
+
+func RemoveAllPlayers(db *sql.DB) error {
+	q := "DELETE FROM player"
+	_, err := db.Exec(q)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func InsertDummyData(db *sql.DB) error {
+	q := "INSERT INTO player (id, first_name, last_name, email, points) VALUES ($1, $2, $3, $4, $5), ($6, $7, $8, $9, $10)"
+	_, err := db.Exec(q,
+		1, "Alice", "David", "alice.david@brol.com", 10,
+		2, "Bob", "Raymon", "bob.raymon@brol.com", 0)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
