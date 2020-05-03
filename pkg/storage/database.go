@@ -8,16 +8,31 @@ import (
 	"github.com/pkg/errors"
 )
 
-func SetupDB(name string) (*sql.DB, func(), error) {
+type Config struct {
+	User       string
+	Password   string
+	Host       string
+	Name       string
+	DisableTLS bool
+}
+
+func SetupDB(cfg *Config) (*sql.DB, func(), error) {
+	sslMode := "require"
+	if cfg.DisableTLS {
+		sslMode = "disable"
+	}
+
+	// Query parameters.
 	q := make(url.Values)
-	q.Set("sslmode", "disable")
+	q.Set("sslmode", sslMode)
 	q.Set("timezone", "utc")
 
+	// Construct url.
 	u := url.URL{
 		Scheme:   "postgres",
-		User:     url.UserPassword("ppio", "dummy"),
-		Host:     "127.0.0.1",
-		Path:     name,
+		User:     url.UserPassword(cfg.User, cfg.Password),
+		Host:     cfg.Host,
+		Path:     cfg.Name,
 		RawQuery: q.Encode(),
 	}
 
