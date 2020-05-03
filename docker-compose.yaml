@@ -1,0 +1,28 @@
+version: '3.8'
+volumes:
+  db-data: 
+
+services:
+  db:
+    container_name: db
+    build:
+      context: .
+      dockerfile: ./Dockerfile.db
+    volumes:
+      - db-data:/var/lib/postgres/data/
+    ports:
+      - "5000:5432"
+
+  ppio-api:
+    container_name: ppio-api
+    build:
+      context: .
+      dockerfile: ./Dockerfile.api
+    environment:
+      - PPIO_DB_HOST=db
+      - PPIO_DB_DISABLE_TLS=1 # This is only disabled for our development enviroment.
+    ports:
+      - '9002:9001'
+    depends_on:
+      - db
+
