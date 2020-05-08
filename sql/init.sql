@@ -1,5 +1,3 @@
-CREATE DATABASE ppio;
-
 CREATE TABLE player (
     id serial PRIMARY KEY,
     first_name VARCHAR(32) NOT NULL,

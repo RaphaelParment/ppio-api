@@ -17,11 +17,21 @@ import (
 	"github.com/RaphaelParment/ppio-api/pkg/storage"
 )
 
+// TODO set up tests with docker
+
 func setup() *server {
-	db, _, err := storage.SetupDB("ppio_tests")
+	cfg := storage.Config{
+		User:       "ppio",
+		Password:   "dummy",
+		Host:       "0.0.0.0",
+		Name:       "ppio_tests",
+		DisableTLS: false,
+	}
+	db, tidy, err := storage.SetupDB(&cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer tidy()
 	l := log.New(os.Stdout, "ppio-tests: ", log.LstdFlags)
 
 	srv := server{
@@ -32,15 +42,26 @@ func setup() *server {
 	srv.routes()
 
 	l.Println("removing items")
+	if err := storage.RemoveAllPlayers(db); err != nil {
+		l.Printf("could not remove all players; %v", err)
+		return nil
+	}
 
 	l.Println("inserting dummy players")
-	storage.InsertDummyData(db)
+	if err := storage.InsertDummyData(db); err != nil {
+		l.Printf("could not add dummy players; %v", err)
+		return nil
+	}
 
 	return &srv
 }
 
 func TestHandlePlayersGet(t *testing.T) {
 	srv := setup()
+	if srv == nil {
+		t.Fatalf("could not setup server / db")
+	}
+
 	defer t.Cleanup(func() {
 		srv.Logger.Println("removing players")
 		storage.RemoveAllPlayers(srv.DB)
