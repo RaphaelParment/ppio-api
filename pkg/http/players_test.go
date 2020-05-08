@@ -17,11 +17,21 @@ import (
 	"github.com/RaphaelParment/ppio-api/pkg/storage"
 )
 
+// TODO set up tests with docker
+
 func setup() *server {
-	db, _, err := storage.SetupDB("ppio_tests")
+	cfg := storage.Config{
+		User:       "ppio",
+		Password:   "dummy",
+		Host:       "0.0.0.0",
+		Name:       "ppio_tests",
+		DisableTLS: false,
+	}
+	db, tidy, err := storage.SetupDB(&cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer tidy()
 	l := log.New(os.Stdout, "ppio-tests: ", log.LstdFlags)
 
 	srv := server{
