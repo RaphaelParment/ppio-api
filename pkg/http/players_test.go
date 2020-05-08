@@ -42,15 +42,26 @@ func setup() *server {
 	srv.routes()
 
 	l.Println("removing items")
+	if err := storage.RemoveAllPlayers(db); err != nil {
+		l.Printf("could not remove all players; %v", err)
+		return nil
+	}
 
 	l.Println("inserting dummy players")
-	storage.InsertDummyData(db)
+	if err := storage.InsertDummyData(db); err != nil {
+		l.Printf("could not add dummy players; %v", err)
+		return nil
+	}
 
 	return &srv
 }
 
 func TestHandlePlayersGet(t *testing.T) {
 	srv := setup()
+	if srv == nil {
+		t.Fatalf("could not setup server / db")
+	}
+
 	defer t.Cleanup(func() {
 		srv.Logger.Println("removing players")
 		storage.RemoveAllPlayers(srv.DB)
