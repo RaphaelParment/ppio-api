@@ -15,7 +15,6 @@
 package http
 
 import (
-	"context"
 	"database/sql"
 	"net/http"
 	"strconv"
@@ -27,9 +26,6 @@ import (
 
 // Players struct
 // type Players struct{}
-
-// KeyPlayer struct is used as key for the request context
-type KeyPlayer struct{}
 
 // swagger:route GET /players{id} players getPlayers
 // Returns a list of players
@@ -94,8 +90,8 @@ func (s *server) handlePlayerGet() http.HandlerFunc {
 func (s *server) handlePlayerAdd() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.Logger.Print("POST player")
-		player := r.Context().Value(KeyPlayer{}).(core.Player)
-		err := storage.AddPlayer(s.DB, &player)
+		player := r.Context().Value(core.KeyPlayer{}).(*core.Player)
+		err := storage.AddPlayer(s.DB, player)
 		if err != nil {
 			s.Logger.Printf("could not add player; %v", err)
 			s.respond(w, r, "Could not add player", http.StatusInternalServerError)
@@ -125,8 +121,8 @@ func (s *server) handlePlayerUpdate() http.HandlerFunc {
 			return
 		}
 		s.Logger.Printf("PUT player id: %d", id)
-		player := r.Context().Value(KeyPlayer{}).(core.Player)
-		success, err := storage.UpdatePlayer(s.DB, id, &player)
+		player := r.Context().Value(core.KeyPlayer{}).(*core.Player)
+		success, err := storage.UpdatePlayer(s.DB, id, player)
 		if err != nil {
 			s.Logger.Printf("could not update player id: %d %v", id, err)
 			s.respond(w, r, "Could not update", http.StatusInternalServerError)
@@ -174,29 +170,4 @@ func (s *server) handlePlayerDelete() http.HandlerFunc {
 		s.respond(w, r, nil, http.StatusOK)
 	}
 
-}
-
-// playerValid middleware checks if the player specified in the
-// body of the request is correct.
-func (s *server) playerValid(h http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		player := core.Player{}
-		err := player.FromJSON(r.Body)
-		if err != nil {
-			s.Logger.Printf("could not convert to player; %v", err)
-			s.respond(w, r, "Wrong JSON", http.StatusBadRequest)
-			return
-		}
-		err = player.Validate()
-		if err != nil {
-			s.Logger.Printf("could not validate player; %v", err)
-			s.respond(w, r, "Error reading player", http.StatusBadRequest)
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), KeyPlayer{}, player)
-		r = r.WithContext(ctx)
-
-		h(w, r)
-	}
 }
