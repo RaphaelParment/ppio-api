@@ -1,12 +1,14 @@
 package http
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"log"
 
 	"net/http"
 
+	"github.com/RaphaelParment/ppio-api/pkg/core"
 	"github.com/gorilla/mux"
 )
 
@@ -46,4 +48,26 @@ func (s *server) respond(w http.ResponseWriter, r *http.Request, data interface{
 
 func (s *server) decode(w http.ResponseWriter, r *http.Request, v interface{}) error {
 	return json.NewDecoder(r.Body).Decode(v)
+}
+
+func (s *server) resourceValid(h http.HandlerFunc, res core.Resource) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := res.FromJSON(r.Body)
+		if err != nil {
+			s.Logger.Printf("could not convert to resource %v; %v", res, err)
+			s.respond(w, r, "Wrong JSON", http.StatusBadRequest)
+			return
+		}
+		err = res.Validate()
+		if err != nil {
+			s.Logger.Printf("could not validate resource %v; %v", res, err)
+			s.respond(w, r, "Error reading match", http.StatusBadRequest)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), res.GetKey(), res)
+		r = r.WithContext(ctx)
+
+		h(w, r)
+	}
 }
