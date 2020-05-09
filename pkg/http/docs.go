@@ -1,18 +1,32 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/RaphaelParment/ppio-api/pkg/core"
 	"github.com/go-openapi/runtime/middleware"
 )
 
+// ErrInvalidProductPath is an error message when the product path is not valid
+var ErrInvalidProductPath = fmt.Errorf("Invalid Path, path should be /products/[id]")
+
+// GenericError is a generic error message returned by a server
+type GenericError struct {
+	Message string `json:"message"`
+}
+
+// ValidationError is a collection of validation error messages
+type ValidationError struct {
+	Messages []string `json:"messages"`
+}
+
 // Generic error message returned as a string
 // swagger:response errorResponse
 type errorResponseWrapper struct {
 	// Description of the error
 	// in: body
-	Body core.GenericError
+	Body GenericError
 }
 
 // Validation errors defined as an array of strings
@@ -20,7 +34,7 @@ type errorResponseWrapper struct {
 type errorValidationWrapper struct {
 	// Collection of the errors
 	// in: body
-	Body core.ValidationError
+	Body ValidationError
 }
 
 // A list of players
