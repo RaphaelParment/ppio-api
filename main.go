@@ -61,7 +61,7 @@ func run() error {
 	defer dbTidy()
 	l.Println("database init OK")
 
-	ch := handlers.CORS(handlers.AllowedOrigins([]string{"http://localhost:4200"}))
+	ch := handlers.CORS(handlers.AllowedOrigins([]string{"*"}))
 	srv := ppioHTTP.NewServer(db, l)
 
 	http.ListenAndServe(":9001", ch(srv))
