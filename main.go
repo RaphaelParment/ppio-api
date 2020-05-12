@@ -63,8 +63,7 @@ func run() error {
 
 	ch := handlers.CORS(handlers.AllowedOrigins([]string{"http://localhost:4200"}))
 	srv := ppioHTTP.NewServer(db, l)
-	ch(srv)
 
-	http.ListenAndServe(":9001", srv)
+	http.ListenAndServe(":9001", ch(srv))
 	return nil
 }
