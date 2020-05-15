@@ -4,12 +4,14 @@ import (
 	"net/http"
 
 	"github.com/RaphaelParment/ppio-api/pkg/core"
+	"github.com/gorilla/mux"
 )
 
 func (s *server) routes() {
 
 	getRtr := s.Router.Methods(http.MethodGet).Subrouter()
 	postRtr := s.Router.Methods(http.MethodPost).Subrouter()
+	optsRtr := s.Router.Methods(http.MethodOptions).Subrouter()
 	putRtr := s.Router.Methods(http.MethodPut).Subrouter()
 	delRtr := s.Router.Methods(http.MethodDelete).Subrouter()
 
@@ -19,8 +21,13 @@ func (s *server) routes() {
 	getRtr.HandleFunc("/results/{id:[0-9]+}", s.handleMatchResultGet())
 	getRtr.HandleFunc("/scores/{id:[0-9]+}", s.handleMatchGamesScoresGet())
 
-	getRtr.Handle("/swagger.yaml", s.handleRawDocsGet())
-	getRtr.Handle("/docs", s.handleDocsGet())
+	s.Router.Handle("/swagger.yaml", s.handleRawDocsGet()).Methods(http.MethodGet)
+	s.Router.Handle("/docs", s.handleDocsGet()).Methods(http.MethodGet)
+
+	optsRtr.HandleFunc("/players", s.handlePreflight())
+	optsRtr.HandleFunc("/matches", s.handlePreflight())
+	optsRtr.HandleFunc("/results", s.handlePreflight())
+	optsRtr.HandleFunc("/scores", s.handlePreflight())
 
 	postRtr.HandleFunc("/players", s.resourceValid(s.handlePlayerAdd(), &core.Player{}))
 	postRtr.HandleFunc("/matches", s.resourceValid(s.handleMatchAdd(), &core.Match{}))
@@ -31,4 +38,5 @@ func (s *server) routes() {
 
 	delRtr.HandleFunc("/players/{id:[0-9]+}", s.handlePlayerDelete())
 
+	s.Router.Use(mux.CORSMethodMiddleware(s.Router))
 }

@@ -71,3 +71,9 @@ func (s *server) resourceValid(h http.HandlerFunc, res core.Resource) http.Handl
 		h(w, r)
 	}
 }
+
+func (s *server) handlePreflight() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:4200")
+	}
+}
