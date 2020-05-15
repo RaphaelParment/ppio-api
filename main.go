@@ -9,6 +9,8 @@ import (
 	ppioHTTP "github.com/RaphaelParment/ppio-api/pkg/http"
 	"github.com/RaphaelParment/ppio-api/pkg/storage"
 	"github.com/gorilla/handlers"
+
+	// "github.com/gorilla/handlers"
 	"github.com/pkg/errors"
 
 	"github.com/ardanlabs/conf"
@@ -61,7 +63,10 @@ func run() error {
 	defer dbTidy()
 	l.Println("database init OK")
 
-	ch := handlers.CORS(handlers.AllowedOrigins([]string{"*"}))
+	ch := handlers.CORS(
+		handlers.AllowedOrigins([]string{"*"}),
+		handlers.AllowedMethods([]string{"OPTIONS", "GET", "POST", "PUT", "DELETE"}),
+		handlers.AllowedHeaders([]string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"}))
 	srv := ppioHTTP.NewServer(db, l)
 
 	http.ListenAndServe(":9001", ch(srv))
