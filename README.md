@@ -15,4 +15,4 @@ RESTful API written in Golang with Gorilla MUX package.
 | `/results/:id` | `GET`    | Get the match result for match indexed by `{id}`.    |
 | `/results`     | `POST`   | Create the match result.                             |
 | `/scores/:id`  | `GET`    | Get the match games scores for match indexed `{id}`. |
-| `/scores/`     | `POST`   | Create the match games scores.                       |
+| `/scores`      | `POST`   | Create the match games scores.                       |
