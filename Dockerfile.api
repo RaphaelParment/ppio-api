@@ -1,10 +1,10 @@
-FROM golang
+FROM golang:alpine  AS builder
 
 ENV GO111MODULE=on
 
 WORKDIR /app
 
-copy go.mod .
+COPY go.mod .
 COPY go.sum .
 
 RUN go mod download
@@ -12,5 +12,17 @@ RUN go mod download
 COPY . .
 
 RUN go build -o ppio-api
+RUN chmod +x wait-for-it.sh
+
+FROM alpine
+
+COPY --from=builder /app/ppio-api /app/ppio-api
+
+# Add dockerize tool -------------------
+RUN apk add --no-cache openssl
+ENV DOCKERIZE_VERSION v0.6.1
+RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
+    && tar -C /usr/local/bin -xzvf dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
+    && rm dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz
 
 CMD ["/app/ppio-api"]

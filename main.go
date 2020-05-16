@@ -8,6 +8,9 @@ import (
 
 	ppioHTTP "github.com/RaphaelParment/ppio-api/pkg/http"
 	"github.com/RaphaelParment/ppio-api/pkg/storage"
+	"github.com/gorilla/handlers"
+
+	// "github.com/gorilla/handlers"
 	"github.com/pkg/errors"
 
 	"github.com/ardanlabs/conf"
@@ -43,6 +46,7 @@ func run() error {
 		}
 		return errors.Wrap(err, "parsing config")
 	}
+	l := log.New(os.Stdout, "ppio :", log.LstdFlags)
 
 	dbCfg := storage.Config{
 		User:       cfg.DB.User,
@@ -57,9 +61,14 @@ func run() error {
 		return errors.Wrap(err, "setup database")
 	}
 	defer dbTidy()
-	l := log.New(os.Stdout, "ppio :", log.LstdFlags)
+	l.Println("database init OK")
+
+	ch := handlers.CORS(
+		handlers.AllowedOrigins([]string{"*"}),
+		handlers.AllowedMethods([]string{"OPTIONS", "GET", "POST", "PUT", "DELETE"}),
+		handlers.AllowedHeaders([]string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"}))
 	srv := ppioHTTP.NewServer(db, l)
 
-	http.ListenAndServe(":9001", srv)
+	http.ListenAndServe(":9001", ch(srv))
 	return nil
 }
