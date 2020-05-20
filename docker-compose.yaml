@@ -1,8 +1,10 @@
 version: '3.3'
+
 volumes:
-  db-data: 
+  db-data:
 
 services:
+
   db:
     container_name: db
     build:
@@ -22,8 +24,15 @@ services:
       - PPIO_DB_HOST=db
       - PPIO_DB_DISABLE_TLS=1
     ports:
-      - '9002:9001'
-    depends_on:
-      - db
+      - '9001:9001'
     command: sh -c "dockerize -wait tcp://db:5432 -timeout 300s -wait-retry-interval 20s /app/ppio-api"
+
+  nginx: 
+    image: nginx:latest
+    container_name: ppio
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 80:80
+      - 443:443
 
