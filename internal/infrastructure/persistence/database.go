@@ -1,4 +1,4 @@
-package storage
+package persistence
 
 import (
 	"database/sql"
@@ -35,6 +35,8 @@ func SetupDB(cfg *Config) (*sql.DB, func(), error) {
 		Path:     cfg.Name,
 		RawQuery: q.Encode(),
 	}
+
+	log.Println(cfg, u.String())
 
 	db, err := sql.Open("postgres", u.String())
 	if err != nil {
