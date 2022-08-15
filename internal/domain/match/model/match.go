@@ -6,8 +6,8 @@ import (
 )
 
 type Match struct {
-	Id             Id
-	FirstPlayerId  playerModel.Id
-	SecondPlayerId playerModel.Id
-	Datetime       time.Time
+	Id          Id
+	PlayerOneId playerModel.Id
+	PlayerTwoId playerModel.Id
+	Datetime    time.Time
 }

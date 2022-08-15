@@ -1,0 +1,22 @@
+version: '3.3'
+
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: ppio
+      POSTGRES_PASSWORD: dummy
+      POSTGRES_DB: ppio
+    volumes:
+      - db-data:/var/lib/postgres/data/
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+
+volumes:
+  db-data: {}
+
+networks:
+  default:
+    external:
+      name: ppio

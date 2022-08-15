@@ -1,14 +1,12 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"github.com/RaphaelParment/ppio-api/internal/application/pp_service"
-	matchModel "github.com/RaphaelParment/ppio-api/internal/domain/match/model"
 	"github.com/RaphaelParment/ppio-api/internal/infrastructure/config"
 	"github.com/RaphaelParment/ppio-api/internal/infrastructure/persistence"
 	"github.com/RaphaelParment/ppio-api/internal/infrastructure/persistence/postgres"
-	"github.com/RaphaelParment/ppio-api/internal/infrastructure/persistence/postgres/entity"
+	"github.com/RaphaelParment/ppio-api/internal/infrastructure/rest"
+	"log"
 	"net/http"
 	"os"
 
@@ -18,78 +16,43 @@ import (
 )
 
 func main() {
-	if err := run(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
+	appLogger := log.New(os.Stdout, "", log.LstdFlags)
+	if err := run(appLogger); err != nil {
+		appLogger.Println(err)
 		os.Exit(1)
 	}
 }
 
-func run() error {
+func run(logger *log.Logger) error {
 	cfg, err := config.NewConfig()
 	if err != nil {
 		return err
 	}
-	//if err := conf.Parse(os.Args[1:], "PPIO", &cfg); err != nil {
-	//	if err == conf.ErrHelpWanted {
-	//		usage, err := conf.Usage("PPIO", &cfg)
-	//		if err != nil {
-	//			return errors.Wrap(err, "generating config usage")
-	//		}
-	//		fmt.Println(usage)
-	//		return nil
-	//	}
-	//	return errors.Wrap(err, "parsing config")
-	//}
-	//l := log.New(os.Stdout, "ppio :", log.LstdFlags)
 
 	dbCfg := persistence.Config{
 		User:       cfg.DB.User,
 		Password:   cfg.DB.Password,
-		Host:       cfg.DB.Host,
+		Host:       cfg.DB.Host + cfg.DB.Port,
 		Name:       cfg.DB.Name,
 		DisableTLS: cfg.DB.DisableTLS,
 	}
 
-	db, dbTidy, err := persistence.SetupDB(&dbCfg)
+	db, dbTidy, err := persistence.ConnectAndTidy(&dbCfg)
 	if err != nil {
 		return errors.Wrap(err, "setup database")
 	}
-	defer dbTidy()
+	defer dbTidy(logger)
 
-	//ch := handlers.CORS(
-	//	handlers.AllowedOrigins([]string{"*"}),
-	//	handlers.AllowedMethods([]string{"OPTIONS", "GET", "POST", "PUT", "DELETE"}),
-	//	handlers.AllowedHeaders([]string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"}))
-	//srv := ppioHTTP.NewServer(db, l)
-
-	matchStore := postgres.NewMatchStore(db)
+	matchStore := postgres.NewMatchStore(logger, db)
 	matchService := pp_service.NewMatchService(matchStore)
 
+	server := rest.NewServer(logger, matchService)
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("/match", func(w http.ResponseWriter, r *http.Request) {
-		match, err := matchService.HandleFindMatch(r.Context(), matchModel.Id(1))
-		if err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
 
-		matchJSON := entity.MatchToJSON(match)
-		m, err := json.Marshal(matchJSON)
-		if err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
+	mux.HandleFunc("/matches/{id}", server.HandleOneMatch())
+	mux.HandleFunc("/matches", server.HandleMatches())
 
-		_, err = fmt.Fprintf(w, string(m))
-		if err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		return
-	})
-
-	http.ListenAndServe(":9001", mux)
+	http.ListenAndServe(cfg.Http.Port, mux)
 	return nil
 }

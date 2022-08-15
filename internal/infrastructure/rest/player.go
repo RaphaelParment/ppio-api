@@ -1,18 +1,14 @@
-//// Package classification: PPIO API
-////
-//// Documentation for Player API
-////
-//// 	Schemes: http
-//// 	BasePath: /ppio
-////	Version: 1.0.0
-////
-////	Consumes:
-////	- application/json
-////
-////	Produces:
-////	- application/json
-//// swagger:meta
 package rest
+
+import (
+	"encoding/json"
+	"fmt"
+	matchModel "github.com/RaphaelParment/ppio-api/internal/domain/match/model"
+	"github.com/RaphaelParment/ppio-api/internal/infrastructure/persistence/postgres/entity"
+	"github.com/gorilla/mux"
+	"net/http"
+	"strconv"
+)
 
 //
 //import (
@@ -173,3 +169,41 @@ package rest
 //	}
 //
 //}
+
+func (s *server) HandleFindPlayers() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		requestId, found := mux.Vars(r)["id"]
+		if !found {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+
+		id, err := strconv.Atoi(requestId)
+		if err != nil {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+
+		match, err := s.matchService.HandleFindMatch(r.Context(), matchModel.Id(id))
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		matchJSON := entity.MatchToJSON(match)
+		m, err := json.Marshal(matchJSON)
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		_, err = fmt.Fprintf(w, string(m))
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+}

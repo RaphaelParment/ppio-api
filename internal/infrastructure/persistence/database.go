@@ -16,18 +16,16 @@ type Config struct {
 	DisableTLS bool
 }
 
-func SetupDB(cfg *Config) (*sql.DB, func(), error) {
+func ConnectAndTidy(cfg *Config) (*sql.DB, func(l *log.Logger), error) {
 	sslMode := "require"
 	if cfg.DisableTLS {
 		sslMode = "disable"
 	}
 
-	// Query parameters.
 	q := make(url.Values)
 	q.Set("sslmode", sslMode)
 	q.Set("timezone", "utc")
 
-	// Construct url.
 	u := url.URL{
 		Scheme:   "postgres",
 		User:     url.UserPassword(cfg.User, cfg.Password),
@@ -35,8 +33,6 @@ func SetupDB(cfg *Config) (*sql.DB, func(), error) {
 		Path:     cfg.Name,
 		RawQuery: q.Encode(),
 	}
-
-	log.Println(cfg, u.String())
 
 	db, err := sql.Open("postgres", u.String())
 	if err != nil {
@@ -47,9 +43,11 @@ func SetupDB(cfg *Config) (*sql.DB, func(), error) {
 		return nil, nil, errors.Wrap(err, "ping")
 	}
 
-	tidy := func() {
-		log.Println("closing db")
-		db.Close()
+	tidy := func(logger *log.Logger) {
+		logger.Println("closing db")
+		if err := db.Close(); err != nil {
+			logger.Printf("failed to close db; %s", err)
+		}
 	}
 
 	return db, tidy, nil
