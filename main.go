@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"github.com/RaphaelParment/ppio-api/internal/application/pp_service"
 	"github.com/RaphaelParment/ppio-api/internal/infrastructure/config"
 	"github.com/RaphaelParment/ppio-api/internal/infrastructure/persistence"
@@ -9,15 +11,18 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
+	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
-	// "github.com/gorilla/handlers"
-	"github.com/pkg/errors"
 )
 
 func main() {
 	appLogger := log.New(os.Stdout, "", log.LstdFlags)
-	if err := run(appLogger); err != nil {
+	err := run(appLogger)
+	if err != nil {
 		appLogger.Println(err)
 		os.Exit(1)
 	}
@@ -39,20 +44,53 @@ func run(logger *log.Logger) error {
 
 	db, dbTidy, err := persistence.ConnectAndTidy(&dbCfg)
 	if err != nil {
-		return errors.Wrap(err, "setup database")
+		return fmt.Errorf("setup database %w", err)
 	}
 	defer dbTidy(logger)
 
 	matchStore := postgres.NewMatchStore(logger, db)
-	matchService := pp_service.NewMatchService(matchStore)
+	matchService := pp_service.NewGameService(matchStore)
 
 	server := rest.NewServer(logger, matchService)
 
-	mux := http.NewServeMux()
+	e := echo.New()
+	e.GET("/matches/:id", server.HandleGetOneGame)
+	e.GET("/matches", server.HandleGetAllGames)
+	e.POST("/matches", server.HandleAddOneGame)
 
-	mux.HandleFunc("/matches/{id}", server.HandleOneMatch())
-	mux.HandleFunc("/matches", server.HandleMatches())
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
-	http.ListenAndServe(cfg.Http.Port, mux)
-	return nil
+	errs := make(chan error, 1)
+
+	logger.Println("Starting http server")
+	go func() {
+		err = e.Start(cfg.Http.Port)
+		if err != nil {
+			switch err {
+			case http.ErrServerClosed:
+				return
+			default:
+				errs <- err
+				return
+			}
+		}
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	select {
+	case <-stop:
+		err = e.Shutdown(ctx)
+		if err != nil {
+			logger.Printf("failed to gracefully shutdown http server; %s", err)
+			return err
+		}
+
+		logger.Printf("shutdown http server gracefully")
+		return nil
+	case err := <-errs:
+		return err
+	}
 }

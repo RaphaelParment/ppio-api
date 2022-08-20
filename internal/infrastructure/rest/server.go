@@ -8,17 +8,17 @@ import (
 	"time"
 )
 
-type MatchService interface {
-	HandleFindMatch(ctx context.Context, id matchModel.Id) (matchModel.Match, error)
-	HandleFindMatches(ctx context.Context) ([]matchModel.Match, error)
-	HandlePersistMatch(ctx context.Context, playerOneId, playerTwoId playerModel.Id, datetime time.Time) (matchModel.Match, error)
+type GameService interface {
+	HandleFindGame(ctx context.Context, id matchModel.Id) (matchModel.Game, error)
+	HandleFindGames(ctx context.Context) ([]matchModel.Game, error)
+	HandlePersistGame(ctx context.Context, playerOneId, playerTwoId playerModel.Id, datetime time.Time) (matchModel.Game, error)
 }
 
 type server struct {
-	logger       *log.Logger
-	matchService MatchService
+	logger      *log.Logger
+	gameService GameService
 }
 
-func NewServer(logger *log.Logger, matchService MatchService) *server {
-	return &server{logger: logger, matchService: matchService}
+func NewServer(logger *log.Logger, gameService GameService) *server {
+	return &server{logger: logger, gameService: gameService}
 }

@@ -8,15 +8,15 @@ import (
 )
 
 type FindOne interface {
-	FindOne(ctx context.Context, id matchModel.Id) (matchModel.Match, error)
+	FindOne(ctx context.Context, id matchModel.Id) (matchModel.Game, error)
 }
 
 type FindAll interface {
-	FindAll(ctx context.Context) ([]matchModel.Match, error)
+	FindAll(ctx context.Context) ([]matchModel.Game, error)
 }
 
 type Persister interface {
-	Persist(ctx context.Context, playerOneId, playerTwoId playerModel.Id, matchTime time.Time) (matchModel.Match, error)
+	Persist(ctx context.Context, playerOneId, playerTwoId playerModel.Id, matchTime time.Time) (matchModel.Game, error)
 }
 
 type FinderPersister interface {

@@ -8,22 +8,22 @@ import (
 	"time"
 )
 
-type matchService struct {
+type gameService struct {
 	finderPersister matchRepository.FinderPersister
 }
 
-func NewMatchService(findOnePersister matchRepository.FinderPersister) *matchService {
-	return &matchService{finderPersister: findOnePersister}
+func NewGameService(findOnePersister matchRepository.FinderPersister) *gameService {
+	return &gameService{finderPersister: findOnePersister}
 }
 
-func (s *matchService) HandleFindMatch(ctx context.Context, id matchModel.Id) (matchModel.Match, error) {
+func (s *gameService) HandleFindGame(ctx context.Context, id matchModel.Id) (matchModel.Game, error) {
 	return s.finderPersister.FindOne(ctx, id)
 }
 
-func (s *matchService) HandleFindMatches(ctx context.Context) ([]matchModel.Match, error) {
+func (s *gameService) HandleFindGames(ctx context.Context) ([]matchModel.Game, error) {
 	return s.finderPersister.FindAll(ctx)
 }
 
-func (s *matchService) HandlePersistMatch(ctx context.Context, playerOneId, playerTwoId playerModel.Id, datetime time.Time) (matchModel.Match, error) {
+func (s *gameService) HandlePersistGame(ctx context.Context, playerOneId, playerTwoId playerModel.Id, datetime time.Time) (matchModel.Game, error) {
 	return s.finderPersister.Persist(ctx, playerOneId, playerTwoId, datetime)
 }

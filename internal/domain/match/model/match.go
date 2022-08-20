@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type Match struct {
+type Game struct {
 	Id          Id
 	PlayerOneId playerModel.Id
 	PlayerTwoId playerModel.Id

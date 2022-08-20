@@ -13,7 +13,7 @@ type Match struct {
 	Datetime    time.Time `json:"date_time"`
 }
 
-func MatchToJSON(match matchModel.Match) Match {
+func GameToJSON(match matchModel.Game) Match {
 	return Match{
 		Id:          int(match.Id),
 		PlayerOneId: int(match.PlayerOneId),
@@ -22,8 +22,8 @@ func MatchToJSON(match matchModel.Match) Match {
 	}
 }
 
-func MatchFromJSON(match Match) matchModel.Match {
-	return matchModel.Match{
+func MatchFromJSON(match Match) matchModel.Game {
+	return matchModel.Game{
 		Id:          matchModel.Id(match.Id),
 		PlayerOneId: playerModel.Id(match.PlayerOneId),
 		PlayerTwoId: playerModel.Id(match.PlayerTwoId),
