@@ -2,6 +2,7 @@ version: '3.3'
 
 services:
   db:
+    container_name: ppio-db
     image: postgres
     environment:
       POSTGRES_USER: ppio

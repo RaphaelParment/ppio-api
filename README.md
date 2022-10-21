@@ -10,29 +10,36 @@ RESTful API written in Golang with Gorilla MUX package.
 | `/matches/:id` | `GET`  | Get a specific match.         |
 | `/matches`     | `POST` | Create a new match.           |
 
-# Infrastructure
-
-Build network:
+## Infrastructure
 
 ```shell
-docker network create ppio
+# Start infrastructure containers
+$ make infra-up
+
+# Stop infrastructure containers
+$ make infra-down
 ```
 
+## Run app from lab
+
 ```shell
-cd infrastructure
-docker-compose up -d
+# Start lab
+$ make lab-up
+
+# Stop lan
+$ make lab-down
 ```
 
-## Using lab
-
+With running infrastructure and lab containers
 ```shell
-docker-compose up -d lab
-docker exec -it lab sh
+# Login lab
+$ docker exec -it lab sh
+$ go run main.go
 ```
 
-Connect to db
+## Connect to db from lab
 
 ```shell
-# in lab container
-psql -h db -p 5432 -d ppio -U ppio
+$ docker exec -it lab sh
+$ PGPASSWORD=dummy psql -h db -p 5432 -d ppio -U ppio
 ```

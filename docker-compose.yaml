@@ -2,6 +2,7 @@ version: '3.3'
 
 services:
   lab:
+    container_name: ppio-lab
     build:
       context: .
       dockerfile: Dockerfile.lab
