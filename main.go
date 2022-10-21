@@ -1,74 +1,96 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"github.com/RaphaelParment/ppio-api/internal/application/pp_service"
+	"github.com/RaphaelParment/ppio-api/internal/infrastructure/config"
+	"github.com/RaphaelParment/ppio-api/internal/infrastructure/persistence"
+	"github.com/RaphaelParment/ppio-api/internal/infrastructure/persistence/postgres"
+	"github.com/RaphaelParment/ppio-api/internal/infrastructure/rest"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-	ppioHTTP "github.com/RaphaelParment/ppio-api/pkg/http"
-	"github.com/RaphaelParment/ppio-api/pkg/storage"
-	"github.com/gorilla/handlers"
-
-	// "github.com/gorilla/handlers"
-	"github.com/pkg/errors"
-
-	"github.com/ardanlabs/conf"
+	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
 )
 
 func main() {
-	if err := run(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
+	appLogger := log.New(os.Stdout, "", log.LstdFlags)
+	err := run(appLogger)
+	if err != nil {
+		appLogger.Println(err)
 		os.Exit(1)
 	}
 }
 
-func run() error {
-	var cfg struct {
-		DB struct {
-			User       string `conf:"default:ppio"`
-			Password   string `conf:"default:dummy,noprint"`
-			Host       string `conf:"default:0.0.0.0"`
-			Name       string `conf:"default:ppio"`
-			DisableTLS bool   `conf:"default:false"`
-		}
+func run(logger *log.Logger) error {
+	cfg, err := config.NewConfig()
+	if err != nil {
+		return err
 	}
 
-	if err := conf.Parse(os.Args[1:], "PPIO", &cfg); err != nil {
-		if err == conf.ErrHelpWanted {
-			usage, err := conf.Usage("PPIO", &cfg)
-			if err != nil {
-				return errors.Wrap(err, "generating config usage")
-			}
-			fmt.Println(usage)
-			return nil
-		}
-		return errors.Wrap(err, "parsing config")
-	}
-	l := log.New(os.Stdout, "ppio :", log.LstdFlags)
-
-	dbCfg := storage.Config{
+	dbCfg := persistence.Config{
 		User:       cfg.DB.User,
 		Password:   cfg.DB.Password,
-		Host:       cfg.DB.Host,
+		Host:       cfg.DB.Host + cfg.DB.Port,
 		Name:       cfg.DB.Name,
 		DisableTLS: cfg.DB.DisableTLS,
 	}
 
-	db, dbTidy, err := storage.SetupDB(&dbCfg)
+	db, dbTidy, err := persistence.ConnectAndTidy(&dbCfg)
 	if err != nil {
-		return errors.Wrap(err, "setup database")
+		return fmt.Errorf("setup database %w", err)
 	}
-	defer dbTidy()
-	l.Println("database init OK")
+	defer dbTidy(logger)
 
-	ch := handlers.CORS(
-		handlers.AllowedOrigins([]string{"*"}),
-		handlers.AllowedMethods([]string{"OPTIONS", "GET", "POST", "PUT", "DELETE"}),
-		handlers.AllowedHeaders([]string{"Accept", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"}))
-	srv := ppioHTTP.NewServer(db, l)
+	matchStore := postgres.NewMatchStore(logger, db)
+	matchService := pp_service.NewMatchService(matchStore)
 
-	http.ListenAndServe(":9001", ch(srv))
-	return nil
+	server := rest.NewServer(logger, matchService)
+
+	e := echo.New()
+	e.GET("/matches/:id", server.HandleGetOneMatch)
+	e.GET("/matches", server.HandleGetAllMatches)
+	e.POST("/matches", server.HandleAddOneMatch)
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+
+	errs := make(chan error, 1)
+
+	logger.Println("Starting http server")
+	go func() {
+		err = e.Start(cfg.Http.Port)
+		if err != nil {
+			switch err {
+			case http.ErrServerClosed:
+				return
+			default:
+				errs <- err
+				return
+			}
+		}
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	select {
+	case <-stop:
+		err = e.Shutdown(ctx)
+		if err != nil {
+			logger.Printf("failed to gracefully shutdown http server; %s", err)
+			return err
+		}
+
+		logger.Printf("shutdown http server gracefully")
+		return nil
+	case err := <-errs:
+		return err
+	}
 }

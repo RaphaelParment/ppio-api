@@ -1,7 +1,0 @@
-FROM postgres
-
-ENV POSTGRES_USER ppio
-ENV POSTGRES_PASSWORD dummy 
-ENV POSTGRES_DB ppio
-
-COPY sql/init.sql /docker-entrypoint-initdb.d/

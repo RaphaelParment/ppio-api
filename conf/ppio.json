@@ -1,3 +1,0 @@
-{
-    "databaseDSN":"postgresql://ppio_user@localhost:26257/ppio?sslmode=disable"
-}

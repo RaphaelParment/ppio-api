@@ -1,29 +1,20 @@
 version: '3.3'
-volumes:
-  db-data: 
 
 services:
-  db:
-    container_name: db
+  lab:
+    container_name: ppio-lab
     build:
       context: .
-      dockerfile: ./Dockerfile.db
+      dockerfile: Dockerfile.lab
+    command: [ "tail", "-f", "/dev/null" ]
     volumes:
-      - db-data:/var/lib/postgres/data/
+      - "./:/app"
+    env_file:
+      - "./.env-docker"
     ports:
-      - "5432:5432"
+      - "9001:9001"
 
-  ppio-api:
-    container_name: ppio-api
-    build:
-      context: .
-      dockerfile: ./Dockerfile.api
-    environment:
-      - PPIO_DB_HOST=db
-      - PPIO_DB_DISABLE_TLS=1
-    ports:
-      - '9002:9001'
-    depends_on:
-      - db
-    command: sh -c "dockerize -wait tcp://db:5432 -timeout 300s -wait-retry-interval 20s /app/ppio-api"
-
+networks:
+  default:
+    external:
+      name: ppio
