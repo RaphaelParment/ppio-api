@@ -6,7 +6,7 @@ CREATE TABLE player (
     points SMALLINT
 );
 
-CREATE TABLE game (
+CREATE TABLE match (
     id serial PRIMARY KEY,
     player_one_id INTEGER REFERENCES player(id),
     player_two_id INTEGER REFERENCES player(id),
@@ -19,14 +19,14 @@ CREATE TABLE set (
     player_two_score SMALLINT
 );
 
-CREATE TABLE game_sets (
-    game_id INTEGER REFERENCES game(id),
+CREATE TABLE match_sets (
+    match_id INTEGER REFERENCES match(id),
     set_id INTEGER REFERENCES set(id),
-    CONSTRAINT game_set UNIQUE (game_id, set_id)
+    CONSTRAINT match_set UNIQUE (match_id, set_id)
 );
 
-CREATE TABLE game_result (
-    game_id INTEGER REFERENCES game(id),
+CREATE TABLE match_result (
+    match_id INTEGER REFERENCES match(id),
     winner_id INTEGER REFERENCES player(id),
     loser_retired BOOLEAN
 );
@@ -38,13 +38,13 @@ VALUES
     (3, 'Steven', 'Farmer', 'steven.farmer@ppio.com', 0),
     (4, 'Moses', 'Wong', 'moses.wong@ppio.com', 0),
     (5, 'Allen', 'Daniels', 'allen.daniels@ppio.com', 0),
-    (6, 'claire', 'Warren', 'claire.warren@ppio.com', 0),
+    (6, 'Claire', 'Warren', 'claire.warren@ppio.com', 0),
     (7, 'Conrad', 'Gibson', 'conrad.gibson@ppio.com', 0),
     (8, 'Ted', 'Little', 'ted.little@ppio.com', 0),
     (9, 'Jessie', 'Gibbs', 'jessie.gibbs@ppio.com', 0),
     (10, 'Ivan', 'Lee', 'ivan.lee@ppio.com', 0);
 
-INSERT INTO game(id, player_one_id, player_two_id, date_time)
+INSERT INTO match(id, player_one_id, player_two_id, date_time)
 VALUES
     (1, 1, 2, '2022-06-22 16:10:25-00'),
     (2, 3, 4, '2022-06-22 19:12:25-00'),
@@ -66,7 +66,7 @@ VALUES
     (10, 7, 11),
     (11, 8, 11);
 
-INSERT INTO game_sets (game_id, set_id)
+INSERT INTO match_sets (match_id, set_id)
 VALUES
     (1, 1),
     (1, 2),
@@ -80,7 +80,7 @@ VALUES
     (5, 10),
     (5, 11);
 
-INSERT INTO game_result (game_id, winner_id, loser_retired)
+INSERT INTO match_result (match_id, winner_id, loser_retired)
 VALUES
     (1, 1, FALSE),
     (2, 4, FALSE),

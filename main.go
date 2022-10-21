@@ -49,14 +49,14 @@ func run(logger *log.Logger) error {
 	defer dbTidy(logger)
 
 	matchStore := postgres.NewMatchStore(logger, db)
-	matchService := pp_service.NewGameService(matchStore)
+	matchService := pp_service.NewMatchService(matchStore)
 
 	server := rest.NewServer(logger, matchService)
 
 	e := echo.New()
-	e.GET("/matches/:id", server.HandleGetOneGame)
-	e.GET("/matches", server.HandleGetAllGames)
-	e.POST("/matches", server.HandleAddOneGame)
+	e.GET("/matches/:id", server.HandleGetOneMatch)
+	e.GET("/matches", server.HandleGetAllMatches)
+	e.POST("/matches", server.HandleAddOneMatch)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
