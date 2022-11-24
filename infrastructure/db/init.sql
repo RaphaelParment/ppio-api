@@ -44,6 +44,8 @@ VALUES
     (9, 'Jessie', 'Gibbs', 'jessie.gibbs@ppio.com', 0),
     (10, 'Ivan', 'Lee', 'ivan.lee@ppio.com', 0);
 
+SELECT setval('player_id_seq', 10, true);
+
 INSERT INTO match(id, player_one_id, player_two_id, date_time)
 VALUES
     (1, 1, 2, '2022-06-22 16:10:25-00'),
@@ -51,6 +53,8 @@ VALUES
     (3, 5, 6, '2022-06-22 14:11:24-00'),
     (4, 7, 8, '2022-06-22 10:54:36-00'),
     (5, 9, 10, '2022-06-22 19:04:27-00');
+
+SELECT setval('match_id_seq', 5, true);
 
 INSERT INTO set (id, player_one_score, player_two_score)
 VALUES
@@ -65,6 +69,8 @@ VALUES
     (9, 11, 0),
     (10, 7, 11),
     (11, 8, 11);
+
+SELECT setval('set_id_seq', 11, true);
 
 INSERT INTO match_sets (match_id, set_id)
 VALUES

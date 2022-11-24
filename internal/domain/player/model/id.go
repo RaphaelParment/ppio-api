@@ -2,6 +2,6 @@ package model
 
 type Id int64
 
-func (id Id) Int() int {
+func (id Id) AsInt() int {
 	return int(id)
 }

@@ -70,7 +70,7 @@ func (s *server) HandleAddOneMatch(c echo.Context) error {
 	var inputMatch restEntity.Match
 	err = json.Unmarshal(bodyBytes, &inputMatch)
 	if err != nil {
-		s.logger.Printf("failed to unmarshal body into match; %s", err)
+		s.logger.Printf("failed to unmarshal body into add match; %s", err)
 		return err
 	}
 
@@ -82,7 +82,7 @@ func (s *server) HandleAddOneMatch(c echo.Context) error {
 
 	id, err := s.matchService.HandlePersistMatch(c.Request().Context(), match)
 	if err != nil {
-		s.logger.Printf("failed to persist match; %s", err)
+		s.logger.Printf("failed to persist match, result and scores; %s", err)
 		return err
 	}
 

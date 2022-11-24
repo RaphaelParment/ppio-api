@@ -38,10 +38,10 @@ func MatchToJSON(match matchModel.Match) Match {
 
 	return Match{
 		Id:          match.Id().Int(),
-		PlayerOneId: match.PlayerOneId().Int(),
-		PlayerTwoId: match.PlayerTwoId().Int(),
+		PlayerOneId: match.PlayerOneId().AsInt(),
+		PlayerTwoId: match.PlayerTwoId().AsInt(),
 		Result: Result{
-			WinnerID:     match.Result().WinnerID(),
+			WinnerID:     match.Result().WinnerID().AsInt(),
 			LoserRetired: match.Result().LoserRetired(),
 		},
 		Score:    score,
@@ -65,7 +65,10 @@ func MatchFromJSON(match Match) (matchModel.Match, error) {
 		matchModel.Id(match.Id),
 		playerModel.Id(match.PlayerOneId),
 		playerModel.Id(match.PlayerTwoId),
-		matchModel.NewResult(match.Result.WinnerID, match.Result.LoserRetired),
+		matchModel.NewResult(
+			playerModel.Id(match.Result.WinnerID),
+			match.Result.LoserRetired,
+		),
 		score,
 		datetime,
 	), nil

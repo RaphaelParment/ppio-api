@@ -1,15 +1,17 @@
 package model
 
+import playerModel "github.com/RaphaelParment/ppio-api/internal/domain/player/model"
+
 type Result struct {
-	winnerID     int
+	winnerID     playerModel.Id
 	loserRetired bool
 }
 
-func NewResult(winnerID int, loserRetired bool) Result {
+func NewResult(winnerID playerModel.Id, loserRetired bool) Result {
 	return Result{winnerID: winnerID, loserRetired: loserRetired}
 }
 
-func (r Result) WinnerID() int {
+func (r Result) WinnerID() playerModel.Id {
 	return r.winnerID
 }
 

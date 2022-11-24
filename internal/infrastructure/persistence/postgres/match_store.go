@@ -69,8 +69,8 @@ func (s *matchStore) Persist(ctx context.Context, match matchModel.Match) (match
 	err = tx.QueryRowxContext(
 		ctx,
 		"INSERT INTO match (player_one_id, player_two_id, date_time) VALUES ($1, $2, $3) RETURNING id",
-		match.PlayerOneId().Int(),
-		match.PlayerTwoId().Int(),
+		match.PlayerOneId().AsInt(),
+		match.PlayerTwoId().AsInt(),
 		match.Datetime(),
 	).Scan(&matchId)
 	if err != nil {
@@ -169,7 +169,10 @@ WHERE ms.match_id = $1`,
 		id,
 		playerModel.Id(match.PlayerOneId),
 		playerModel.Id(match.PlayerTwoId),
-		matchModel.NewResult(result.WinnerID, result.LoserRetired),
+		matchModel.NewResult(
+			playerModel.Id(result.WinnerID),
+			result.LoserRetired,
+		),
 		score,
 		match.Datetime,
 	), nil

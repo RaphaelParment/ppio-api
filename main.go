@@ -3,17 +3,18 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/RaphaelParment/ppio-api/internal/application/pp_service"
-	"github.com/RaphaelParment/ppio-api/internal/infrastructure/config"
-	"github.com/RaphaelParment/ppio-api/internal/infrastructure/persistence"
-	"github.com/RaphaelParment/ppio-api/internal/infrastructure/persistence/postgres"
-	"github.com/RaphaelParment/ppio-api/internal/infrastructure/rest"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/RaphaelParment/ppio-api/internal/application/pp_service"
+	"github.com/RaphaelParment/ppio-api/internal/infrastructure/config"
+	"github.com/RaphaelParment/ppio-api/internal/infrastructure/persistence"
+	"github.com/RaphaelParment/ppio-api/internal/infrastructure/persistence/postgres"
+	"github.com/RaphaelParment/ppio-api/internal/infrastructure/rest"
 
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"

@@ -16,3 +16,5 @@ func (s Set) PlayerOneScore() int {
 func (s Set) PlayerTwoScore() int {
 	return s.playerTwoScore
 }
+
+type Score []Set
