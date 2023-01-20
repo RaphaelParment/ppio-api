@@ -17,7 +17,7 @@ func NewMatchService(findOnePersister matchRepository.FinderPersister) *matchSer
 }
 
 func (s *matchService) HandleFindMatch(ctx context.Context, id matchModel.Id) (matchModel.Match, error) {
-	return s.finderPersister.FindOne(ctx, id)
+	return s.finderPersister.Find(ctx, id)
 }
 
 func (s *matchService) HandleFindMatches(ctx context.Context) ([]matchModel.Match, error) {

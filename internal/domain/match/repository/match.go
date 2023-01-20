@@ -7,20 +7,20 @@ import (
 	"time"
 )
 
-type FindOne interface {
-	FindOne(ctx context.Context, id matchModel.Id) (matchModel.Match, error)
+type FindMatch interface {
+	Find(ctx context.Context, id matchModel.Id) (matchModel.Match, error)
 }
 
-type FindAll interface {
+type FindAllMatches interface {
 	FindAll(ctx context.Context) ([]matchModel.Match, error)
 }
 
-type Persister interface {
+type PersistOneMatch interface {
 	Persist(ctx context.Context, playerOneId, playerTwoId playerModel.Id, matchTime time.Time) (matchModel.Match, error)
 }
 
 type FinderPersister interface {
-	FindOne
-	FindAll
-	Persister
+	FindMatch
+	FindAllMatches
+	PersistOneMatch
 }

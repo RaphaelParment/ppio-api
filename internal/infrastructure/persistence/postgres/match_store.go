@@ -19,7 +19,7 @@ func NewMatchStore(logger *log.Logger, db *sql.DB) *matchStore {
 	return &matchStore{logger: logger, db: db}
 }
 
-func (s *matchStore) FindOne(ctx context.Context, id matchModel.Id) (matchModel.Match, error) {
+func (s *matchStore) Find(ctx context.Context, id matchModel.Id) (matchModel.Match, error) {
 	var match matchModel.Match
 	row := s.db.QueryRowContext(ctx, "SELECT * FROM match WHERE id = $1", id)
 	err := row.Scan(&match.Id, &match.PlayerOneId, &match.PlayerTwoId, &match.Datetime)
