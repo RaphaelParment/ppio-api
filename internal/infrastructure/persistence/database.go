@@ -1,7 +1,7 @@
 package persistence
 
 import (
-	"database/sql"
+	"github.com/jmoiron/sqlx"
 	"log"
 	"net/url"
 
@@ -16,7 +16,7 @@ type Config struct {
 	DisableTLS bool
 }
 
-func ConnectAndTidy(cfg *Config) (*sql.DB, func(l *log.Logger), error) {
+func ConnectAndTidy(cfg *Config) (*sqlx.DB, func(l *log.Logger), error) {
 	sslMode := "require"
 	if cfg.DisableTLS {
 		sslMode = "disable"
@@ -34,7 +34,7 @@ func ConnectAndTidy(cfg *Config) (*sql.DB, func(l *log.Logger), error) {
 		RawQuery: q.Encode(),
 	}
 
-	db, err := sql.Open("postgres", u.String())
+	db, err := sqlx.Open("postgres", u.String())
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "open")
 	}

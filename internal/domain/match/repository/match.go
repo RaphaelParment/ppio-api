@@ -3,8 +3,6 @@ package repository
 import (
 	"context"
 	matchModel "github.com/RaphaelParment/ppio-api/internal/domain/match/model"
-	playerModel "github.com/RaphaelParment/ppio-api/internal/domain/player/model"
-	"time"
 )
 
 type FindMatch interface {
@@ -16,7 +14,7 @@ type FindAllMatches interface {
 }
 
 type PersistOneMatch interface {
-	Persist(ctx context.Context, playerOneId, playerTwoId playerModel.Id, matchTime time.Time) (matchModel.Match, error)
+	Persist(ctx context.Context, match matchModel.Match) (matchModel.Id, error)
 }
 
 type FinderPersister interface {

@@ -4,8 +4,6 @@ import (
 	"context"
 	matchModel "github.com/RaphaelParment/ppio-api/internal/domain/match/model"
 	matchRepository "github.com/RaphaelParment/ppio-api/internal/domain/match/repository"
-	playerModel "github.com/RaphaelParment/ppio-api/internal/domain/player/model"
-	"time"
 )
 
 type matchService struct {
@@ -24,6 +22,6 @@ func (s *matchService) HandleFindMatches(ctx context.Context) ([]matchModel.Matc
 	return s.finderPersister.FindAll(ctx)
 }
 
-func (s *matchService) HandlePersistMatch(ctx context.Context, playerOneId, playerTwoId playerModel.Id, datetime time.Time) (matchModel.Match, error) {
-	return s.finderPersister.Persist(ctx, playerOneId, playerTwoId, datetime)
+func (s *matchService) HandlePersistMatch(ctx context.Context, match matchModel.Match) (matchModel.Id, error) {
+	return s.finderPersister.Persist(ctx, match)
 }

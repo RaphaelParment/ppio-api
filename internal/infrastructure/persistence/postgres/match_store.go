@@ -2,80 +2,175 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	matchModel "github.com/RaphaelParment/ppio-api/internal/domain/match/model"
 	playerModel "github.com/RaphaelParment/ppio-api/internal/domain/player/model"
 	"github.com/RaphaelParment/ppio-api/internal/infrastructure/persistence/postgres/entity"
+	"github.com/jmoiron/sqlx"
 	"log"
-	"time"
 )
 
 type matchStore struct {
 	logger *log.Logger
-	db     *sql.DB
+	db     *sqlx.DB
 }
 
-func NewMatchStore(logger *log.Logger, db *sql.DB) *matchStore {
+func NewMatchStore(logger *log.Logger, db *sqlx.DB) *matchStore {
 	return &matchStore{logger: logger, db: db}
 }
 
 func (s *matchStore) Find(ctx context.Context, id matchModel.Id) (matchModel.Match, error) {
-	var match matchModel.Match
-	row := s.db.QueryRowContext(ctx, "SELECT * FROM match WHERE id = $1", id)
-	err := row.Scan(&match.Id, &match.PlayerOneId, &match.PlayerTwoId, &match.Datetime)
-	if err != nil {
-		return matchModel.Match{}, err
-	}
-
-	return match, nil
+	return s.find(ctx, id)
 }
 
 func (s *matchStore) FindAll(ctx context.Context) ([]matchModel.Match, error) {
-	var matches []matchModel.Match
-	rows, err := s.db.QueryContext(ctx, "SELECT * FROM match")
+	var matchIds []matchModel.Id
+	rowsId, err := s.db.QueryxContext(ctx, "SELECT id FROM match")
 	if err != nil {
 		return nil, err
 	}
+
 	defer func() {
-		if err := rows.Close(); err != nil {
-			log.Println(err)
+		if err := rowsId.Close(); err != nil {
+			s.logger.Printf("failed to close rows id; %v", err)
 		}
 	}()
 
-	var match entity.Match
-	for rows.Next() {
-		err := rows.Scan(&match.Id, &match.PlayerOneId, &match.PlayerTwoId, &match.Datetime)
+	var id int
+	for rowsId.Next() {
+		err = rowsId.Scan(&id)
 		if err != nil {
 			return nil, err
 		}
 
-		matches = append(matches, entity.MatchFromJSON(match))
+		matchIds = append(matchIds, matchModel.Id(id))
+	}
+
+	var matches []matchModel.Match
+	for _, matchId := range matchIds {
+		match, err := s.find(ctx, matchId)
+		if err != nil {
+			return nil, err
+		}
+
+		matches = append(matches, match)
 	}
 
 	return matches, nil
 }
 
-func (s *matchStore) Persist(
-	ctx context.Context,
-	playerOneId playerModel.Id,
-	playerTwoId playerModel.Id,
-	matchTime time.Time,
-) (matchModel.Match, error) {
-	query := "INSERT INTO match (first_player_id, second_player_id, date_time) VALUES ($1, $2, $3) RETURNING id"
+func (s *matchStore) Persist(ctx context.Context, match matchModel.Match) (matchModel.Id, error) {
+	var matchId int64
 
-	var id int
-	err := s.db.QueryRowContext(ctx, query, int32(playerOneId), int32(playerTwoId), matchTime).Scan(&id)
+	tx, err := s.db.Beginx()
 	if err != nil {
-		s.logger.Printf("failed to insert match; %s", err)
+		return matchModel.NewUndefinedId(), err
+	}
+
+	err = tx.QueryRowxContext(
+		ctx,
+		"INSERT INTO match (player_one_id, player_two_id, date_time) VALUES ($1, $2, $3) RETURNING id",
+		match.PlayerOneId().Int(),
+		match.PlayerTwoId().Int(),
+		match.Datetime(),
+	).Scan(&matchId)
+	if err != nil {
+		return matchModel.NewUndefinedId(), err
+	}
+
+	_, err = tx.ExecContext(
+		ctx,
+		"INSERT INTO match_result(match_id, winner_id, loser_retired) VALUES ($1, $2, $3)",
+		matchId,
+		match.Result().WinnerID(),
+		match.Result().LoserRetired(),
+	)
+	if err != nil {
+		return matchModel.NewUndefinedId(), err
+	}
+
+	for _, set := range match.Score() {
+		_, err = tx.ExecContext(
+			ctx,
+			"INSERT INTO set (player_one_score, player_two_score) VALUES ($1, $2)",
+			set.PlayerOneScore(),
+			set.PlayerTwoScore(),
+		)
+		if err != nil {
+			return matchModel.NewUndefinedId(), err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return matchModel.NewUndefinedId(), err
+	}
+
+	return matchModel.Id(matchId), nil
+}
+
+func (s *matchStore) find(ctx context.Context, id matchModel.Id) (matchModel.Match, error) {
+	var (
+		match  entity.Match
+		result entity.MatchResult
+	)
+
+	rowMatch := s.db.QueryRowxContext(
+		ctx,
+		"SELECT id, player_one_id, player_two_id, date_time FROM match WHERE id = $1",
+		id,
+	)
+	err := rowMatch.StructScan(&match)
+	if err != nil {
 		return matchModel.Match{}, err
 	}
 
-	match := matchModel.Match{
-		Id:          matchModel.Id(id),
-		PlayerOneId: playerOneId,
-		PlayerTwoId: playerTwoId,
-		Datetime:    matchTime,
+	rowResult := s.db.QueryRowxContext(
+		ctx,
+		"SELECT match_id, winner_id, loser_retired FROM match_result WHERE match_id = $1",
+		id,
+	)
+	err = rowResult.StructScan(&result)
+	if err != nil {
+		return matchModel.Match{}, err
 	}
 
-	return match, nil
+	rowsScore, err := s.db.QueryxContext(
+		ctx,
+		`SELECT id, player_one_score, player_two_score 
+FROM set s 
+JOIN match_sets ms 
+	ON s.id = ms.set_id
+WHERE ms.match_id = $1`,
+		id,
+	)
+	if err != nil {
+		return matchModel.Match{}, err
+	}
+	defer func() {
+		if err := rowsScore.Close(); err != nil {
+			s.logger.Printf("failed to close rows score; %v", err)
+		}
+	}()
+
+	var (
+		set   entity.Set
+		score matchModel.Score
+	)
+	for rowsScore.Next() {
+		err = rowsScore.StructScan(&set)
+		if err != nil {
+			return matchModel.Match{}, err
+		}
+
+		score = append(score, matchModel.NewSet(set.PlayerOneScore, set.PlayerTwoScore))
+	}
+
+	return matchModel.NewMatch(
+		id,
+		playerModel.Id(match.PlayerOneId),
+		playerModel.Id(match.PlayerTwoId),
+		matchModel.NewResult(result.WinnerID, result.LoserRetired),
+		score,
+		match.Datetime,
+	), nil
 }
