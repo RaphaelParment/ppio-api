@@ -1,6 +1,6 @@
 # PPio RESTful API
 
-RESTful API written in Golang with Gorilla MUX package.
+RESTful API written in Go with Echo.
 
 ## Endpoints
 
