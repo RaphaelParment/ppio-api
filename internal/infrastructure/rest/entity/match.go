@@ -15,18 +15,6 @@ type Match struct {
 	Datetime    string `json:"datetime"`
 }
 
-type Result struct {
-	WinnerID     int  `json:"winner_id"`
-	LoserRetired bool `json:"loser_retired"`
-}
-
-type Set struct {
-	PlayerOneScore int `json:"player_one_score"`
-	PlayerTwoScore int `json:"player_two_score"`
-}
-
-type Score []Set
-
 func MatchToJSON(match matchModel.Match) Match {
 	var score Score
 	for _, set := range match.Score() {
