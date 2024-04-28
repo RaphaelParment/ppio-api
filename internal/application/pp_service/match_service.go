@@ -9,7 +9,7 @@ import (
 )
 
 type matchValidator interface {
-	ValidateMatch(match matchModel.Match) map[string]string
+	ValidateMatch(match matchModel.Match) error
 }
 
 type matchService struct {
@@ -89,10 +89,9 @@ func (s *matchService) HandleUpdateOneMatch(ctx context.Context, id matchModel.I
 	)
 
 	// validate that new match is still valid
-	problems := s.matchValidator.ValidateMatch(patchedMatch)
-	if len(problems) > 0 {
-		// TODO problems to err
-		return matchModel.Match{}, nil
+	err = s.matchValidator.ValidateMatch(patchedMatch)
+	if err != nil {
+		return matchModel.Match{}, err
 	}
 
 	_, err = s.finderPersister.Update(ctx, patchedMatch)

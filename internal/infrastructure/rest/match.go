@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	matchModel "github.com/RaphaelParment/ppio-api/internal/domain/match/model"
+	"github.com/RaphaelParment/ppio-api/internal/domain/match/validator"
 	restEntity "github.com/RaphaelParment/ppio-api/internal/infrastructure/rest/entity"
 	"github.com/labstack/echo/v4"
 	"io"
@@ -129,6 +130,11 @@ func (s *server) HandleUpdateOneMatch(c echo.Context) error {
 
 	match, err := s.matchService.HandleUpdateOneMatch(c.Request().Context(), matchModel.Id(id), patchedMatch)
 	if err != nil {
+		if validationError, isValidatorError := err.(validator.ValidatorErrors); isValidatorError {
+			err = c.JSON(http.StatusBadRequest, validationError.Problems())
+			return nil
+		}
+
 		s.logger.Printf("failed to update match id %d, err: %s", id, err)
 		return err
 	}
