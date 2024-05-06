@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	matchModel "github.com/RaphaelParment/ppio-api/internal/domain/match/model"
+	"github.com/RaphaelParment/ppio-api/internal/domain/match/validator"
 	restEntity "github.com/RaphaelParment/ppio-api/internal/infrastructure/rest/entity"
 	"github.com/labstack/echo/v4"
 	"io"
@@ -89,6 +90,58 @@ func (s *server) HandleAddOneMatch(c echo.Context) error {
 	err = c.JSON(http.StatusOK, id)
 	if err != nil {
 		s.logger.Printf("failed to marshal match id; %s", err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *server) HandleUpdateOneMatch(c echo.Context) error {
+	matchId := c.Param("id")
+	if matchId == "" {
+		s.logger.Printf("missing match id")
+		return errors.New("missing match id")
+	}
+
+	id, err := strconv.Atoi(matchId)
+	if err != nil {
+		s.logger.Printf("failed to convert match id to int; %s", err)
+		return err
+	}
+
+	bodyBytes, err := io.ReadAll(c.Request().Body)
+	if err != nil {
+		s.logger.Printf("failed to read body; %s", err)
+		return err
+	}
+
+	var inputPatchedMatch restEntity.MatchPatch
+	err = json.Unmarshal(bodyBytes, &inputPatchedMatch)
+	if err != nil {
+		s.logger.Printf("failed to unmarshal body into match patch; %s", err)
+		return err
+	}
+
+	patchedMatch, err := restEntity.MatchPatchFromJSON(inputPatchedMatch)
+	if err != nil {
+		s.logger.Printf("failed to convert match patch to domain match patch; err: %s", err)
+		return err
+	}
+
+	match, err := s.matchService.HandleUpdateOneMatch(c.Request().Context(), matchModel.Id(id), patchedMatch)
+	if err != nil {
+		if validationError, isValidatorError := err.(validator.ValidatorErrors); isValidatorError {
+			err = c.JSON(http.StatusBadRequest, validationError.Problems())
+			return nil
+		}
+
+		s.logger.Printf("failed to update match id %d, err: %s", id, err)
+		return err
+	}
+
+	err = c.JSON(http.StatusOK, restEntity.MatchToJSON(match))
+	if err != nil {
+		s.logger.Printf("failed to return json match response; %s", err)
 		return err
 	}
 

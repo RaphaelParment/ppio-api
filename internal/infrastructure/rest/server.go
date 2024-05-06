@@ -10,6 +10,7 @@ type MatchService interface {
 	HandleFindMatch(ctx context.Context, id matchModel.Id) (matchModel.Match, error)
 	HandleFindMatches(ctx context.Context) ([]matchModel.Match, error)
 	HandlePersistMatch(ctx context.Context, match matchModel.Match) (matchModel.Id, error)
+	HandleUpdateOneMatch(ctx context.Context, id matchModel.Id, matchPatch matchModel.MatchPatch) (matchModel.Match, error)
 }
 
 type server struct {

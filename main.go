@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	matchValidator "github.com/RaphaelParment/ppio-api/internal/domain/match/validator"
 	"log"
 	"net/http"
 	"os"
@@ -50,7 +51,7 @@ func run(logger *log.Logger) error {
 	defer dbTidy(logger)
 
 	matchStore := postgres.NewMatchStore(logger, db)
-	matchService := pp_service.NewMatchService(matchStore)
+	matchService := pp_service.NewMatchService(matchStore, matchValidator.NewMatchValidator())
 
 	server := rest.NewServer(logger, matchService)
 
@@ -58,6 +59,7 @@ func run(logger *log.Logger) error {
 	e.GET("/matches/:id", server.HandleGetOneMatch)
 	e.GET("/matches", server.HandleGetAllMatches)
 	e.POST("/matches", server.HandleAddOneMatch)
+	e.PATCH("/matches/:id", server.HandleUpdateOneMatch)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)

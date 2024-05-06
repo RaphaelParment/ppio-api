@@ -17,8 +17,13 @@ type PersistOneMatch interface {
 	Persist(ctx context.Context, match matchModel.Match) (matchModel.Id, error)
 }
 
-type FinderPersister interface {
+type UpdateOneMatch interface {
+	Update(ctx context.Context, match matchModel.Match) (matchModel.Id, error)
+}
+
+type FinderPersisterUpdater interface {
 	FindMatch
 	FindAllMatches
 	PersistOneMatch
+	UpdateOneMatch
 }

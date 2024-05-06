@@ -108,6 +108,21 @@ func (s *matchStore) Persist(ctx context.Context, match matchModel.Match) (match
 	return matchModel.Id(matchId), nil
 }
 
+func (s *matchStore) Update(ctx context.Context, match matchModel.Match) (matchModel.Id, error) {
+	_, err := s.db.ExecContext(
+		ctx,
+		"UPDATE match SET player_one_id = $1, player_two_id = $2 WHERE id = $3",
+		match.PlayerOneId().AsInt(),
+		match.PlayerTwoId().AsInt(),
+		match.Id().Int(),
+	)
+	if err != nil {
+		return matchModel.NewUndefinedId(), err
+	}
+
+	return match.Id(), nil
+}
+
 func (s *matchStore) find(ctx context.Context, id matchModel.Id) (matchModel.Match, error) {
 	var (
 		match  entity.Match
