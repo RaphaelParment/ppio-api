@@ -13,7 +13,7 @@ func TestCanValidateMatch(t *testing.T) {
 	tt := []struct {
 		name             string
 		match            model.Match
-		expectedProblems map[string]string
+		expectedProblems ValidatorErrors
 	}{
 		{
 			name: "same two players",
@@ -27,9 +27,11 @@ func TestCanValidateMatch(t *testing.T) {
 				},
 				datetime,
 			),
-			expectedProblems: map[string]string{
-				"player-one-id": "player one cannot be the same as player two",
-				"player-two-id": "player two cannot be the same as player one",
+			expectedProblems: ValidatorErrors{
+				problems: map[string]string{
+					"player-one-id": "player one cannot be the same as player two",
+					"player-two-id": "player two cannot be the same as player one",
+				},
 			},
 		},
 		{
@@ -45,8 +47,10 @@ func TestCanValidateMatch(t *testing.T) {
 				},
 				datetime,
 			),
-			expectedProblems: map[string]string{
-				"set-score-1": "player one score cannot equal player two score",
+			expectedProblems: ValidatorErrors{
+				problems: map[string]string{
+					"set-score-1": "player one score cannot equal player two score",
+				},
 			},
 		},
 		{
@@ -62,8 +66,10 @@ func TestCanValidateMatch(t *testing.T) {
 				},
 				datetime,
 			),
-			expectedProblems: map[string]string{
-				"match-score": "player one cannot have won the same number of sets as player two",
+			expectedProblems: ValidatorErrors{
+				problems: map[string]string{
+					"match-score": "player one cannot have won the same number of sets as player two",
+				},
 			},
 		},
 		{
@@ -80,8 +86,10 @@ func TestCanValidateMatch(t *testing.T) {
 				},
 				datetime,
 			),
-			expectedProblems: map[string]string{
-				"match-winner": "player two has won most sets but it not marked as winner",
+			expectedProblems: ValidatorErrors{
+				problems: map[string]string{
+					"match-winner": "player two has won most sets but it not marked as winner",
+				},
 			},
 		},
 		{
@@ -98,8 +106,10 @@ func TestCanValidateMatch(t *testing.T) {
 				},
 				datetime,
 			),
-			expectedProblems: map[string]string{
-				"match-winner": "player one has won most sets but it not marked as winner",
+			expectedProblems: ValidatorErrors{
+				problems: map[string]string{
+					"match-winner": "player one has won most sets but it not marked as winner",
+				},
 			},
 		},
 	}
